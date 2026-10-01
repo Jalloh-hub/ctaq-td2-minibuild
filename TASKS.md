@@ -3,11 +3,10 @@
 [X] 1- mettre en place le projet Gradle (JUnit 5, Hamcrest, Mockito, JaCoCo)
 [X] 2- Gav : construire une coordonnée à partir d'une chaîne "group:artifact:version" (groupe, artefact, version)
 
-[ ] 3- Gav : lever une exception pour une coordonnée mal formée
-    [ ] 3a- chaîne vide, trop peu / trop de parties
-    [ ] 3b- partie vide ou faite d'espaces
-    [ ] 3c- null
-
+[X] 3- Gav : lever une exception pour une coordonnée mal formée
+    [X] 3a- chaîne vide, trop peu / trop de parties
+    [X] 3b- partie vide ou faite d'espaces
+    [X] 3c- null
 
 [ ] 4- InMemoryStorage : put puis get renvoie l'artefact associé à la coordonnée
 [ ] 5- InMemoryStorage : get d'une coordonnée absente renvoie un Optional vide
