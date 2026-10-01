@@ -1,7 +1,7 @@
 # minibuild — task list
 
 [X] 1- mettre en place le projet Gradle (JUnit 5, Hamcrest, Mockito, JaCoCo)
-[ ] 2- Gav : construire une coordonnée à partir d'une chaîne "group:artifact:version" (groupe, artefact, version)
+[X] 2- Gav : construire une coordonnée à partir d'une chaîne "group:artifact:version" (groupe, artefact, version)
 [ ] 3- Gav : lever une exception pour une coordonnée mal formée
 [ ] 4- InMemoryStorage : put puis get renvoie l'artefact associé à la coordonnée
 [ ] 5- InMemoryStorage : get d'une coordonnée absente renvoie un Optional vide
