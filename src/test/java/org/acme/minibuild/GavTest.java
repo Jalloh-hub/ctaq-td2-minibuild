@@ -3,16 +3,14 @@ package org.acme.minibuild;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.CsvFileSource;
 
 class GavTest {
 
-    // Jeux de valeurs écrits dans l'annotation : une coordonnée, puis les sorties attendues.
+    // Jeux de valeurs dans un fichier des ressources de test
+    // (src/test/resources/coordonnees-valides.csv), première ligne = en-têtes.
     @ParameterizedTest
-    @CsvSource({
-        "org.acme:lib-a:1.0.0, org.acme, lib-a, 1.0.0",
-        "org.other:lib-c:3.0.0, org.other, lib-c, 3.0.0"
-    })
+    @CsvFileSource(resources = "/coordonnees-valides.csv", numLinesToSkip = 1)
     void parseDecoupeLesTroisChamps(String coordonnee, String groupe, String artefact,
                                     String version) {
         Gav gav = Gav.parse(coordonnee);
