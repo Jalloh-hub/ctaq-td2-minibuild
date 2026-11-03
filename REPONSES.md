@@ -57,3 +57,11 @@ Les deux techniques n'ont pas le même but. Les classes d'équivalence servent �
 
 C'est l'appelant qui décide si l'absence est une erreur dans son contexte. Par exemple, le résolveur lèvera plus tard une exception pour une dépendance introuvable (question 34). Le stockage, lui, se contente de répondre « présent » ou « absent ».
 
+
+## Question 11
+
+> Le TDD vous a-t-il aidé sur ce composant ? Pourquoi ?
+
+**Très peu.** `BufferedLineReader` ne contient aucune logique à nous : sa méthode `readLine` se contente d'appeler celle d'un `BufferedReader` (délégation d'une ligne). Le TDD aide quand le code se construit pas à pas : un test qui échoue, puis le code qui le fait passer, puis un autre test qui force à généraliser (Fake it, triangulation, comme pour `Gav`). Ici, il n'y a rien à faire émerger : la première version écrite est déjà la version finale, et aucun second test ne ferait évoluer le code.
+
+Le test garde quand même une utilité : il vérifie que le **branchement** sur `BufferedReader` est correct (lignes lues dans l'ordre, `null` en fin de texte, comme le contrat de `ILineReader` l'annonce). Il le fait sans fichier, grâce à un `StringReader`, qui est un vrai `Reader` lisant une chaîne en mémoire : le test reste rapide et indépendant du disque.
