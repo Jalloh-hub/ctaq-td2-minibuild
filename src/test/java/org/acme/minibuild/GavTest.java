@@ -1,6 +1,8 @@
 package org.acme.minibuild;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
@@ -17,9 +19,10 @@ class GavTest {
     void parseDecoupeLesTroisChamps(String coordonnee, String groupe, String artefact,
                                     String version) {
         Gav gav = Gav.parse(coordonnee);
-        assertEquals(groupe, gav.group());
-        assertEquals(artefact, gav.artifact());
-        assertEquals(version, gav.version());
+        assertThat(gav.group(), is(groupe));
+        assertThat(gav.artifact(), is(artefact));
+        assertThat(gav.version(), is(version));
+        assertThat(gav.toString(), startsWith(groupe + ":"));
     }
 
     // Classes d'équivalence invalides de l'entrée (comme au TD1), un représentant chacune :

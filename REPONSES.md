@@ -65,3 +65,18 @@ C'est l'appelant qui décide si l'absence est une erreur dans son contexte. Par 
 **Très peu.** `BufferedLineReader` ne contient aucune logique à nous : sa méthode `readLine` se contente d'appeler celle d'un `BufferedReader` (délégation d'une ligne). Le TDD aide quand le code se construit pas à pas : un test qui échoue, puis le code qui le fait passer, puis un autre test qui force à généraliser (Fake it, triangulation, comme pour `Gav`). Ici, il n'y a rien à faire émerger : la première version écrite est déjà la version finale, et aucun second test ne ferait évoluer le code.
 
 Le test garde quand même une utilité : il vérifie que le **branchement** sur `BufferedReader` est correct (lignes lues dans l'ordre, `null` en fin de texte, comme le contrat de `ILineReader` l'annonce). Il le fait sans fichier, grâce à un `StringReader`, qui est un vrai `Reader` lisant une chaîne en mémoire : le test reste rapide et indépendant du disque.
+
+## Question 12
+
+> Réécrire les assertions de `GavTest` avec Hamcrest. Faire échouer volontairement une assertion dans chacune des deux versions (`assertEquals` et `assertThat`) et comparer les messages d'échec.
+
+**Réécriture.** Dans `parseDecoupeLesTroisChamps`, chaque `assertEquals(attendu, obtenu)` devient `assertThat(obtenu, is(attendu))`, et une assertion utilisant `startsWith` vérifie la forme textuelle de la coordonnée (`toString()` ajouté à `Gav`, qui reconstruit `group:artifact:version`). Avec Hamcrest, l'assertion se lit comme une phrase (« le groupe est … ») et la valeur obtenue vient en premier ; avec JUnit, l'ordre `attendu, obtenu` est facile à inverser par erreur.
+
+**Échec volontaire.** On remplace temporairement l'attendu par `"org.acme"` ; le test échoue pour la ligne `org.other:lib-c:3.0.0` du fichier CSV. Messages observés :
+
+| Version | Message d'échec |
+|---|---|
+| JUnit `assertEquals("org.acme", gav.group())` | `expected: <org.acme> but was: <org.other>` |
+| Hamcrest `assertThat(gav.group(), is("org.acme"))` | `Expected: is "org.acme"` / `but: was "org.other"` |
+
+**Comparaison.** Sur une égalité simple, la différence est mince : les deux messages donnent l'attendu et l'obtenu. Le message Hamcrest est construit à partir du matcher lui-même (« is "org.acme" ») : il décrit la propriété attendue et pas seulement une valeur. La différence devient nette avec les matchers composables sur les collections (`containsInAnyOrder`, `hasSize`, `hasItem`), où Hamcrest indique quel élément manque ou est en trop (question 17).

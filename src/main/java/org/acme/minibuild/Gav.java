@@ -26,4 +26,10 @@ public record Gav(String group, String artifact, String version) {
         }
         return new Gav(parts[0], parts[1], parts[2]);
     }
+
+    /** Forme textuelle {@code group:artifact:version}, inverse de {@link #parse}. */
+    @Override
+    public String toString() {
+        return group + SEPARATEUR + artifact + SEPARATEUR + version;
+    }
 }
