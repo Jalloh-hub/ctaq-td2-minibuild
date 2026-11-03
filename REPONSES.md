@@ -44,3 +44,16 @@ C'est le signe qu'il reste du travail, car le code ne calcule rien : il recopie 
 **La triangulation en demande deux parce que cette hypothèse n'est pas encore vraie pour notre code.** Dire qu'un représentant vaut pour toute la classe suppose que le programme traite tous les éléments de la classe de la même façon. Or après la question 5, `parse` renvoie une constante : il donne le bon résultat pour `org.acme:lib-a:1.0.0` et un résultat faux pour toutes les autres coordonnées de la même classe. Un seul exemple peut toujours être satisfait par une constante ; deux exemples dont les résultats attendus diffèrent ne le peuvent plus, et obligent à écrire le vrai découpage de la chaîne.
 
 Les deux techniques n'ont pas le même but. Les classes d'équivalence servent à **choisir peu de données de test** pour chercher des défauts dans un code supposé écrit de façon générale. La triangulation sert à **faire émerger ce code général** : le second test n'apporte pas une nouvelle classe, il rend la tricherie impossible.
+
+
+## Question 10
+
+> La signature fournie de `get` renvoie un `Optional` : pourquoi est-ce préférable à `null` ou à une exception pour une coordonnée absente ?
+
+**Une coordonnée absente du stockage est un cas normal, pas une erreur.** Le résolveur interrogera souvent le stockage pour des coordonnées qui n'y sont pas encore. Ce cas fait partie du fonctionnement ordinaire et doit donc apparaître dans le résultat de `get`.
+
+- **Contre `null`** : rien dans la signature `Artifact get(Gav)` ne prévient l'appelant que le résultat peut être absent. Il peut l'oublier, et l'erreur n'apparaît que plus loin, sous la forme d'une `NullPointerException`. Avec `Optional<Artifact>`, l'absence est écrite dans le **type** : l'appelant est obligé de traiter les deux cas (`isEmpty`, `orElse`, `orElseThrow`…) avant d'accéder à l'artefact.
+- **Contre une exception** : une exception est réservée aux situations anormales. L'utiliser pour un cas attendu obligerait l'appelant à écrire un `try/catch` pour un résultat ordinaire.
+
+C'est l'appelant qui décide si l'absence est une erreur dans son contexte. Par exemple, le résolveur lèvera plus tard une exception pour une dépendance introuvable (question 34). Le stockage, lui, se contente de répondre « présent » ou « absent ».
+
