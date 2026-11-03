@@ -80,3 +80,18 @@ Le test garde quand même une utilité : il vérifie que le **branchement** sur 
 | Hamcrest `assertThat(gav.group(), is("org.acme"))` | `Expected: is "org.acme"` / `but: was "org.other"` |
 
 **Comparaison.** Sur une égalité simple, la différence est mince : les deux messages donnent l'attendu et l'obtenu. Le message Hamcrest est construit à partir du matcher lui-même (« is "org.acme" ») : il décrit la propriété attendue et pas seulement une valeur. La différence devient nette avec les matchers composables sur les collections (`containsInAnyOrder`, `hasSize`, `hasItem`), où Hamcrest indique quel élément manque ou est en trop (question 17).
+
+## Question 13
+
+> Dans le cours (C2, diapositive 25), un bouchon « simule la logique de comportement » d'un composant appelé. En quoi la vérification par `verify` va-t-elle au-delà de ce rôle ? Formuler la différence entre test orienté état et test orienté interaction.
+
+**Le bouchon du cours ne fait que fournir des réponses.** D'après le cours (C2, diapositive 25, « Pilotes et bouchons (2/2) ») : « Les souches / bouchons simuleront la logique de comportement. En général elles se contenteront de retourner une valeur fixe conforme aux paramètres passés. » Le bouchon sert donc seulement à alimenter le composant testé : il remplace le composant appelé pour que le test puisse s'exécuter, mais il ne vérifie rien. C'est le rôle de `when(...).thenReturn(...)` avec Mockito (stub, au sens de Meszaros).
+
+**`verify` va au-delà : il observe ce que le composant testé fait à son collaborateur.** Avec `verify(registry).lookup(a)` ou `verify(registry, never()).publish(any())`, la doublure enregistre les appels qu'elle reçoit et le test les contrôle après l'exécution : quelles méthodes ont été appelées, avec quels arguments, combien de fois. Ces appels sont des **sorties indirectes** du composant : elles n'apparaissent pas dans la valeur qu'il renvoie. La doublure ne sert plus seulement à faire tourner le test, elle devient un moyen d'observation (spy, au sens de Meszaros).
+
+**Deux façons de vérifier un composant :**
+
+- **Test orienté état** : on vérifie le **résultat** de l'appel, c'est-à-dire la valeur renvoyée ou l'état final du système, sans regarder comment il a été obtenu. Exemple : après `put(LIB_A, ARTEFACT_A)`, `get(LIB_A)` renvoie `Optional.of(ARTEFACT_A)` (question 10).
+- **Test orienté interaction** : on vérifie les **appels faits aux collaborateurs** (lesquels, avec quels arguments, combien de fois). Exemple : en résolvant `{a}`, le résolveur appelle `lookup(a)` exactement une fois et n'appelle jamais `publish`.
+
+Le premier teste *ce que* le composant produit, le second *comment* il collabore avec les autres. Un test orienté interaction est plus lié à l'implémentation : il peut échouer après un refactoring qui ne change pas le résultat. On le réserve donc aux cas où l'appel lui-même fait partie du comportement attendu (par exemple, ne jamais republier, ou ne pas interroger deux fois le registre pour la même coordonnée).
