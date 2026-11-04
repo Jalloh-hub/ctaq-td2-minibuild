@@ -1,9 +1,12 @@
 package org.acme.minibuild;
 
 import java.io.IOException;
+import java.util.Set;
 
 /** Lit un fichier de build orienté lignes. */
 public class LineBasedPomParser implements IPomParser {
+
+    private static final String PROJECT = "project ";
 
     @Override
     public Project parse(ILineReader reader) throws IOException {
@@ -11,6 +14,7 @@ public class LineBasedPomParser implements IPomParser {
         if (ligne == null) {
             throw new InvalidBuildFileException("fichier vide : ligne « project » attendue");
         }
-        return null;   // cas suivants : task list
+        String nom = ligne.substring(PROJECT.length());
+        return new Project(nom, Set.of());
     }
 }

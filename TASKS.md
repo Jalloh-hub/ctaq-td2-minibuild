@@ -11,7 +11,7 @@
 [X] 4- InMemoryStorage : put puis get renvoie l'artefact associé à la coordonnée
 [X] 5- InMemoryStorage : get d'une coordonnée absente renvoie un Optional vide
 [X] 6- BufferedLineReader : lire ligne à ligne en déléguant à un BufferedReader
-[ ] 7- LineBasedPomParser : lire la ligne "project" (nom du projet)
+[X] 7- LineBasedPomParser : lire la ligne "project" (nom du projet)
 [ ] 8- LineBasedPomParser : lire les lignes "dependency" (dépendances directes)
 [ ] 9- LineBasedPomParser : ignorer les lignes vides
 [ ] 10- LineBasedPomParser : refuser un fichier mal formé
