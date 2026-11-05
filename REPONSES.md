@@ -127,3 +127,28 @@ Mockito apporte surtout une chose que le bouchon écrit à la main ne permet pas
 Description du test : `[IStorage | get(a) ↦ Some(A), put ×0]sp ⊢ publish(A) ⇒ ↯ AlreadyPublishedException`.
 
 Le cas nominal se teste de la même façon : `[IStorage | get(a) ↦ None, put(a, A) ×1]sp ⊢ publish(A)`, vérifié par `verify(storage).put(LIB_A, ARTEFACT_A)`. Ici, seule l'interaction montre que `publish` a fait son travail, puisque `publish` ne renvoie rien.
+
+
+## Question 17
+
+> Écrire un test orienté état sur `resolve({lib-a})` (lib-a → lib-b → lib-c), avec `assertEquals(Set.of(…), …)` puis avec `containsInAnyOrder`. Faire échouer les deux versions et comparer les messages.
+
+Description du test : `[IRegistry | lookup(a) ↦ Some(A), lookup(b) ↦ Some(B), lookup(c) ↦ Some(C)]s ⊢ resolve({a}) ⇒ {a, b, c}`, où `A = Artifact(a, {b})`, `B = Artifact(b, {c})`, `C = Artifact(c, ∅)`.
+
+Pour faire échouer les deux assertions, on a cassé volontairement le résolveur : il ne descendait que d'un niveau, et oubliait donc `lib-c`. Messages obtenus :
+
+- avec `assertEquals(Set.of(a, b, c), resolved)` (JUnit seul) :
+
+  ```
+  expected: <[org.acme:lib-a:1.0.0, org.acme:lib-b:2.1.0, org.other:lib-c:3.0.0]>
+   but was: <[org.acme:lib-b:2.1.0, org.acme:lib-a:1.0.0]>
+  ```
+
+- avec `assertThat(resolved, containsInAnyOrder(a, b, c))` (Hamcrest) :
+
+  ```
+  Expected: iterable with items [<org.acme:lib-a:1.0.0>, <org.acme:lib-b:2.1.0>, <org.other:lib-c:3.0.0>] in any order
+       but: no item matches: <org.other:lib-c:3.0.0> in [<org.acme:lib-b:2.1.0>, <org.acme:lib-a:1.0.0>]
+  ```
+
+**Comparaison.** `assertEquals` affiche les deux ensembles en entier, dans l'ordre arbitraire d'un `Set` : c'est à nous de les comparer élément par élément pour trouver ce qui manque. Le message de Hamcrest le dit directement : « no item matches: lib-c », c'est-à-dire **quel élément manque**. Sur un `Set`, `assertEquals` ne dépend déjà pas de l'ordre (l'égalité de deux `Set` ignore l'ordre) : l'apport de Hamcrest est ici **la clarté du message d'échec**, comme l'annonce le cours Outils (« des messages d'échec explicites »).

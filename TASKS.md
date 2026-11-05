@@ -20,8 +20,8 @@
     [X] 10c- première ligne qui n'est pas « project »
 [X] 11- StorageBasedRegistry : publier un artefact puis le retrouver (publish, lookup)
 [X] 12- StorageBasedRegistry : refuser de republier une coordonnée déjà publiée (AlreadyPublishedException)
-[ ] 13- AllVersionsResolver : résoudre un artefact sans dépendance
-[ ] 14- AllVersionsResolver : calculer la fermeture transitive des dépendances
+[X] 13- AllVersionsResolver : résoudre un artefact sans dépendance
+[X] 14- AllVersionsResolver : calculer la fermeture transitive des dépendances
 [ ] 15- AllVersionsResolver : garder toutes les versions d'un même artefact (pas de résolution de conflit)
 [ ] 16- BuildTool : lire le fichier de build puis résoudre ses dépendances
 [ ] 17- tests d'intégration : assembler les composants (descendant puis ascendant)
