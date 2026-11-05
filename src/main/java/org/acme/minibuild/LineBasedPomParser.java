@@ -4,11 +4,15 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-/** Lit un fichier de build orienté lignes. */
+/**
+ * Lit un fichier de build orienté lignes : une ligne {@code project <nom>} (la première ligne
+ * utile), puis des lignes {@code dependency <group:artifact:version>} ; les lignes vides sont
+ * ignorées.
+ */
 public class LineBasedPomParser implements IPomParser {
 
-    private static final String PROJECT = "project ";
-    private static final String DEPENDENCY = "dependency ";
+    private static final String PROJECT = "project";
+    private static final String DEPENDENCY = "dependency";
 
     @Override
     public Project parse(ILineReader reader) throws IOException {
@@ -16,10 +20,10 @@ public class LineBasedPomParser implements IPomParser {
         if (ligne == null) {
             throw new InvalidBuildFileException("fichier vide : ligne « project » attendue");
         }
-        String nom = ligne.substring(PROJECT.length());
+        String nom = valeurApres(PROJECT, ligne);
         Set<Gav> dependances = new HashSet<>();
         while ((ligne = prochaineLigneUtile(reader)) != null) {
-            dependances.add(Gav.parse(ligne.substring(DEPENDENCY.length())));
+            dependances.add(coordonnee(valeurApres(DEPENDENCY, ligne)));
         }
         return new Project(nom, dependances);
     }
@@ -31,5 +35,23 @@ public class LineBasedPomParser implements IPomParser {
             ligne = reader.readLine();
         } while (ligne != null && ligne.isBlank());
         return ligne;
+    }
+
+    /** Valeur qui suit le mot-clé attendu, ou exception si la ligne ne commence pas par lui. */
+    private static String valeurApres(String motCle, String ligne) {
+        String[] morceaux = ligne.strip().split("\\s+", 2);
+        if (!morceaux[0].equals(motCle) || morceaux.length < 2) {
+            throw new InvalidBuildFileException(
+                "ligne « " + motCle + " <valeur> » attendue : " + ligne);
+        }
+        return morceaux[1];
+    }
+
+    private static Gav coordonnee(String texte) {
+        try {
+            return Gav.parse(texte);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidBuildFileException("coordonnée invalide : " + texte, e);
+        }
     }
 }
