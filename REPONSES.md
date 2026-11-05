@@ -179,3 +179,22 @@ Description du test : `[IRegistry | lookup(a) ↦ Some(A), lookup(b) ↦ Some(B)
 
 **En complément, le losange annoncé à la question 18.** On a ajouté le test `resolveNeRedemandePasUneCoordonneeDejaVue` : a → b, a → c, b → d, c → d, avec `verify(registry, times(1)).lookup(d)`. Lancé sur la version naïve, il échoue (« Wanted 1 time … But was 2 times ») : d était demandé une fois en passant par b et une fois en passant par c. Sur la version corrigée, il passe. C'est ce test d'interaction, et non le test d'état (le résultat {a, b, c, d} est le même dans les deux versions), qui distingue les deux résolveurs.
 
+## Question 20
+
+> Un test d'interaction est plus précis mais aussi plus fragile : il se casse lors de refactorings qui ne changent pourtant pas le comportement observable. Donner un exemple concret sur `AllVersionsResolver`. Quelle règle en tirer sur l'usage de `verify` ?
+
+**Exemples concrets.** Le comportement observable du résolveur, c'est l'ensemble de coordonnées qu'il renvoie. Les refactorings suivants ne le changent pas, mais cassent les tests des questions 18 et 19, qui exigent `verify(registry, times(1)).lookup(…)` pour chaque coordonnée et `verifyNoMoreInteractions(registry)` :
+
+- **interroger le registre par lots** : on ajoute à `IRegistry` une méthode `lookupAll(Set<Gav>)`, et le résolveur demande toutes les coordonnées d'un niveau en un seul appel. Le résultat est identique, mais `lookup` n'est plus appelé du tout : les `verify(…, times(1)).lookup(…)` échouent ;
+- **ajouter un cache devant le registre** : un résolveur qui garde en mémoire les artefacts déjà demandés d'un appel de `resolve` à l'autre n'interroge plus le registre la deuxième fois. Le résultat ne change pas, mais le nombre d'appels, si ;
+- **ajouter un appel inoffensif** : par exemple vérifier d'abord que chaque dépendance directe existe (`lookup` en plus), ou consulter le registre pour journaliser. Le résultat est le même, mais `times(1)` et surtout `verifyNoMoreInteractions` cassent, puisqu'ils interdisent tout appel non prévu.
+
+Dans chaque cas, le test échoue alors que le résolveur fonctionne toujours : c'est un faux positif, qui coûte du temps et finit par faire perdre confiance dans les tests.
+
+**Règle à en tirer : ne vérifier par `verify` que les interactions qui font partie du contrat du composant** ; pour tout le reste, préférer la vérification d'état (le résultat renvoyé). Exemples d'interactions qui sont bien dans le contrat :
+
+- le registre ne doit **jamais** modifier le stockage quand il refuse une republication (question 16, `verify(storage, never()).put(…)`) : c'est la règle métier elle-même ;
+- le registre doit ranger un nouvel artefact (`verify(storage).put(…)`), car `publish` ne renvoie rien et n'a pas d'autre effet observable ;
+- le résolveur ne doit **jamais** publier (`never()).publish(…)`).
+
+En revanche, « interroger le registre exactement une fois par coordonnée » relève plutôt d'un choix d'implémentation (une exigence de performance). Il est utile de le tester quand on veut justement garantir cette propriété, comme pour le losange de la question 19, mais en sachant que ce test devra évoluer avec l'implémentation. C'est ce que dit le cours Outils : la vérification d'état observe ce que le composant **produit**, la vérification d'interaction **comment** il collabore, et seule la première est indépendante de la façon dont il est écrit.
