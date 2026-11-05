@@ -95,3 +95,17 @@ Le test garde quand même une utilité : il vérifie que le **branchement** sur 
 - **Test orienté interaction** : on vérifie les **appels faits aux collaborateurs** (lesquels, avec quels arguments, combien de fois). Exemple : en résolvant `{a}`, le résolveur appelle `lookup(a)` exactement une fois et n'appelle jamais `publish`.
 
 Le premier teste *ce que* le composant produit, le second *comment* il collabore avec les autres. Un test orienté interaction est plus lié à l'implémentation : il peut échouer après un refactoring qui ne change pas le résultat. On le réserve donc aux cas où l'appel lui-même fait partie du comportement attendu (par exemple, ne jamais republier, ou ne pas interroger deux fois le registre pour la même coordonnée).
+
+
+## Question 15
+
+> La doublure de `ILineReader` n'ouvre aucun fichier. Quels défauts ce test unitaire est-il par construction incapable de détecter ?
+
+Dans les tests de la question 14, la doublure est un **bouchon** (un *Stub* au sens du cours Outils) : elle renvoie des lignes programmées à l'avance, déjà découpées et propres. Par construction, le test ne voit que ce que la doublure lui donne. Il ne peut donc pas détecter les défauts qui tiennent **au vrai fichier et au vrai lecteur** :
+
+- **l'encodage** : un fichier en ISO-8859-1 lu comme de l'UTF-8 (ou l'inverse) donne des caractères faux dans les noms ;
+- **les fins de ligne** : un fichier écrit sous Windows (`\r\n`), ou dont la dernière ligne n'a pas de retour à la ligne ;
+- **le fichier absent, illisible ou sans droits** : la `IOException` levée par le vrai lecteur, que la doublure ne lève jamais ;
+- **le contrat réel de `readLine`** : le parseur suppose que `readLine` renvoie `null` en fin de fichier. La doublure respecte cette hypothèse parce que nous l'avons programmée ainsi, mais rien ne vérifie que la vraie réalisation (`BufferedLineReader`) la respecte aussi.
+
+Ce dernier point est le plus important : chaque composant est testé avec **sa propre hypothèse** sur l'autre, et personne ne vérifie que les deux hypothèses concordent. C'est justement l'objet des **tests d'intégration**, qui testent les interfaces entre composants réels (cours C2), puis des **tests de validation** avec un vrai fichier sur disque (question 32). Le test unitaire localise bien un défaut du parseur, mais il ne dit rien de son assemblage avec le lecteur.
