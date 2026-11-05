@@ -73,4 +73,25 @@ class AllVersionsResolverTest {
 
         assertThat(resolver.resolve(Set.of(LIB_A)), containsInAnyOrder(LIB_A, LIB_B, LIB_C));
     }
+
+    // Après correction : en losange (a → b, a → c, b → d, c → d), d n'est demandé qu'une
+    // fois. La version récursive naïve le demandait deux fois : seul un test d'interaction
+    // voit cette différence, le résultat (l'état) étant le même.
+    // [IRegistry | lookup(a) ↦ Some(A), lookup(b) ↦ Some(B), lookup(c) ↦ Some(C),
+    //              lookup(d) ↦ Some(D)]sp
+    //     ⊢  resolve({a})  ⇒  lookup(d) ×1
+    //     où A = Artifact(a, {b, c}), B = Artifact(b, {d}), C = Artifact(c, {d}),
+    //        D = Artifact(d, ∅)
+    @Test
+    void resolveNeRedemandePasUneCoordonneeDejaVue() {
+        Gav libD = Gav.parse("org.other:lib-d:4.0.0");
+        when(registry.lookup(LIB_A)).thenReturn(Optional.of(new Artifact(LIB_A, Set.of(LIB_B, LIB_C))));
+        when(registry.lookup(LIB_B)).thenReturn(Optional.of(new Artifact(LIB_B, Set.of(libD))));
+        when(registry.lookup(LIB_C)).thenReturn(Optional.of(new Artifact(LIB_C, Set.of(libD))));
+        when(registry.lookup(libD)).thenReturn(Optional.of(new Artifact(libD, Set.of())));
+
+        resolver.resolve(Set.of(LIB_A));
+
+        verify(registry, times(1)).lookup(libD);
+    }
 }

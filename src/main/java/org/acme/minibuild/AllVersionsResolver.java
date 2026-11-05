@@ -1,5 +1,7 @@
 package org.acme.minibuild;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -18,11 +20,14 @@ public class AllVersionsResolver implements IResolver {
 
     @Override
     public Set<Gav> resolve(Set<Gav> directDependencies) {
-        Set<Gav> resolues = new HashSet<>();
-        for (Gav gav : directDependencies) {
-            resolues.add(gav);
-            registry.lookup(gav)
-                    .ifPresent(artefact -> resolues.addAll(resolve(artefact.dependencies())));
+        Set<Gav> resolues = new HashSet<>();                  // déjà vues : garantit la
+        Deque<Gav> aTraiter = new ArrayDeque<>(directDependencies); // terminaison (cycles)
+        while (!aTraiter.isEmpty()) {
+            Gav gav = aTraiter.pop();
+            if (resolues.add(gav)) {                          // chaque coordonnée une fois
+                registry.lookup(gav)
+                        .ifPresent(artefact -> aTraiter.addAll(artefact.dependencies()));
+            }
         }
         return resolues;
     }

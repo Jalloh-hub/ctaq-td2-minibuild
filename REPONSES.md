@@ -163,3 +163,19 @@ Description du test : `[IRegistry | lookup(a) ↦ Some(A), lookup(b) ↦ Some(B)
 **Propriété capturée : le résolveur n'interroge pas plusieurs fois le registre pour une même coordonnée** (pas de travail redondant). Le test d'état de la question 17 ne peut pas la voir : qu'on interroge le registre une ou deux fois pour la même coordonnée, l'ensemble renvoyé est le même, puisqu'un `Set` ignore les doublons. Seule l'observation des appels (les sorties indirectes du résolveur vers le registre) la révèle.
 
 **Remarque : ce test est vert d'emblée.** Sur la chaîne a → b → c, la version naïve interroge déjà chaque coordonnée une seule fois. Le test ne devient discriminant que sur un **losange** (a → b, a → c, b → d, c → d), où la version naïve interroge deux fois d (une fois en passant par b, une fois par c). Un test qui passe dès qu'on l'écrit n'a jamais été vu rouge : il doit faire douter de son pouvoir de détection. On ajoutera le cas du losange à la question 19.
+
+
+## Question 19
+
+> Le cas d'un cycle figure-t-il dans votre task list ? Ajouter un cycle (lib-c dépend de lib-a), écrire le test et constater l'échec (que se passe-t-il ?), puis corriger `AllVersionsResolver`. Le test d'interaction de la question 18 vous aide-t-il à diagnostiquer plus vite que le test d'état ?
+
+**Le cycle n'était pas dans la task list** : on l'a ajouté (tâche 19, « découverte en question 19 »). Description du test : `[IRegistry | lookup(a) ↦ Some(A), lookup(b) ↦ Some(B), lookup(c) ↦ Some(C')]s ⊢ resolve({a}) ⇒ {a, b, c}`, où `C' = Artifact(c, {a})`.
+
+**Ce qui se passe** : la version récursive naïve ne termine pas. `resolve({a})` appelle `resolve({b})`, qui appelle `resolve({c})`, qui rappelle `resolve({a})`… chaque appel ajoute un étage sur la pile, jusqu'à la `StackOverflowError`. Une version itérative (boucle `while`) sans mémoire des coordonnées déjà vues ne planterait même pas : elle **bouclerait indéfiniment**. D'où l'annotation `@Timeout(2)` sur le test, qui le fait échouer au lieu de bloquer toute la suite (cours Outils : `@Timeout` sert à « faire échouer un test trop long (boucle infinie, attente bloquée) »).
+
+**Correction** : un parcours itératif avec l'**ensemble des coordonnées déjà vues**. On traite une file de coordonnées ; une coordonnée n'est demandée au registre que la première fois qu'on la rencontre (`if (resolues.add(gav))`). Comme le nombre de coordonnées est fini et que chacune n'est traitée qu'une fois, la terminaison est garantie, même en présence de cycles.
+
+**Le test d'interaction aide-t-il à diagnostiquer ?** **Non, pas ici.** Sur le scénario du cycle, le test d'état et le test d'interaction échouent de la même façon : le programme plante (ou bouclerait) **avant** d'atteindre les assertions et les `verify`. Ni l'un ni l'autre ne dit pourquoi : c'est la **pile d'appels** de l'erreur (`AllVersionsResolver.resolve` répété des milliers de fois) qui oriente le diagnostic vers la récursion sans fin.
+
+**En complément, le losange annoncé à la question 18.** On a ajouté le test `resolveNeRedemandePasUneCoordonneeDejaVue` : a → b, a → c, b → d, c → d, avec `verify(registry, times(1)).lookup(d)`. Lancé sur la version naïve, il échoue (« Wanted 1 time … But was 2 times ») : d était demandé une fois en passant par b et une fois en passant par c. Sur la version corrigée, il passe. C'est ce test d'interaction, et non le test d'état (le résultat {a, b, c, d} est le même dans les deux versions), qui distingue les deux résolveurs.
+
