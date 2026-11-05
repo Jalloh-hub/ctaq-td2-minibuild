@@ -24,6 +24,6 @@
 [X] 14- AllVersionsResolver : calculer la fermeture transitive des dépendances
 [ ] 15- AllVersionsResolver : garder toutes les versions d'un même artefact (pas de résolution de conflit)
 [X] 19- AllVersionsResolver : cycle dans les dépendances (tâche découverte en question 19)
-[ ] 16- BuildTool : lire le fichier de build puis résoudre ses dépendances
+[X] 16- BuildTool : lire le fichier de build puis résoudre ses dépendances
 [ ] 17- tests d'intégration : assembler les composants (descendant puis ascendant)
 [ ] 18- tests de validation : système complet, vrai fichier de build en entrée
