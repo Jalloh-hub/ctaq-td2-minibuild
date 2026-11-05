@@ -2,6 +2,7 @@ package org.acme.minibuild;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 class LineBasedPomParserTest {
 
     private static final Gav LIB_A = Gav.parse("org.acme:lib-a:1.0.0");
+    private static final Gav LIB_B = Gav.parse("org.acme:lib-b:2.1.0");
 
     private final IPomParser parser = new LineBasedPomParser();
 
@@ -54,5 +56,20 @@ class LineBasedPomParserTest {
 
         assertThat(project.name(), is("mon-app"));
         assertThat(project.dependencies(), contains(LIB_A));
+    }
+
+    // 14.4
+    // [ILineReader | readLine ↦ ⟨"project mon-app", "", "dependency org.acme:lib-a:1.0.0",
+    //                            "", "dependency org.acme:lib-b:2.1.0", ⊥⟩]s
+    //     ⊢  parse(reader)  ⇒  Project("mon-app", {org.acme:lib-a:1.0.0, org.acme:lib-b:2.1.0})
+    @Test
+    void lesLignesVidesSontIgnorees() throws IOException {
+        ILineReader reader = mock(ILineReader.class);
+        when(reader.readLine()).thenReturn("project mon-app", "",
+            "dependency org.acme:lib-a:1.0.0", "", "dependency org.acme:lib-b:2.1.0", null);
+
+        Project project = parser.parse(reader);
+
+        assertThat(project.dependencies(), containsInAnyOrder(LIB_A, LIB_B));
     }
 }
