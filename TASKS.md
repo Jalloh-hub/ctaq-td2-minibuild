@@ -13,7 +13,7 @@
 [X] 6- BufferedLineReader : lire ligne à ligne en déléguant à un BufferedReader
 [X] 7- LineBasedPomParser : lire la ligne "project" (nom du projet)
 [X] 8- LineBasedPomParser : lire les lignes "dependency" (dépendances directes)
-[ ] 9- LineBasedPomParser : ignorer les lignes vides
+[X] 9- LineBasedPomParser : ignorer les lignes vides
 [ ] 10- LineBasedPomParser : refuser un fichier mal formé
 [ ] 11- StorageBasedRegistry : publier un artefact puis le retrouver (publish, lookup)
 [ ] 12- StorageBasedRegistry : refuser de republier une coordonnée déjà publiée (AlreadyPublishedException)
