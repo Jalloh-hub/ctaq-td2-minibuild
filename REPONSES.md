@@ -109,3 +109,21 @@ Dans les tests de la question 14, la doublure est un **bouchon** (un *Stub* au s
 - **le contrat réel de `readLine`** : le parseur suppose que `readLine` renvoie `null` en fin de fichier. La doublure respecte cette hypothèse parce que nous l'avons programmée ainsi, mais rien ne vérifie que la vraie réalisation (`BufferedLineReader`) la respecte aussi.
 
 Ce dernier point est le plus important : chaque composant est testé avec **sa propre hypothèse** sur l'autre, et personne ne vérifie que les deux hypothèses concordent. C'est justement l'objet des **tests d'intégration**, qui testent les interfaces entre composants réels (cours C2), puis des **tests de validation** avec un vrai fichier sur disque (question 32). Le test unitaire localise bien un défaut du parseur, mais il ne dit rien de son assemblage avec le lecteur.
+
+
+## Question 16
+
+> Écrire le bouchon de `IStorage` à la main, puis avec Mockito, et comparer. Le test de la règle de non-republication vérifie-t-il un état, une interaction, ou les deux ?
+
+**Comparaison.** À la main, le bouchon est une classe d'une quinzaine de lignes (`StubStorage`) qui implémente `IStorage` : réutilisable, mais figée (une seule réponse programmée, et `put` ne fait rien). Avec Mockito, la doublure est décrite en deux lignes, directement dans le test : `mock(IStorage.class)` puis `when(storage.get(LIB_A)).thenReturn(Optional.of(ARTEFACT_A))`. Dans les deux cas, elle joue le rôle d'un **bouchon (Stub)** au sens du cours Outils : elle fournit des réponses programmées et ne vérifie rien.
+
+Mockito apporte surtout une chose que le bouchon écrit à la main ne permet pas : **vérifier les interactions** avec `verify`, après l'exécution. La doublure joue alors le rôle d'un **Spy** (c'est le test qui vérifie, après coup). Avec la classe écrite à la main, il faudrait écrire, à la main aussi, un Spy qui enregistre ses appels.
+
+**État, interaction, ou les deux ?**
+
+- Écrit avec le bouchon, le test de la règle ne vérifie qu'**un état** : `publish` lève `AlreadyPublishedException`. Il ne verrait pas un code qui rangerait l'artefact dans le stockage **puis** lèverait l'exception.
+- En ajoutant `verify(storage, never()).put(any(), any())`, il vérifie **les deux** : l'état (l'exception) et l'interaction (le stockage n'est jamais modifié). C'est le sens réel de la règle : un artefact déjà publié ne doit pas être remplacé.
+
+Description du test : `[IStorage | get(a) ↦ Some(A), put ×0]sp ⊢ publish(A) ⇒ ↯ AlreadyPublishedException`.
+
+Le cas nominal se teste de la même façon : `[IStorage | get(a) ↦ None, put(a, A) ×1]sp ⊢ publish(A)`, vérifié par `verify(storage).put(LIB_A, ARTEFACT_A)`. Ici, seule l'interaction montre que `publish` a fait son travail, puisque `publish` ne renvoie rien.

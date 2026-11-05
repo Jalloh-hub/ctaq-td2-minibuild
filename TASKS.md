@@ -18,8 +18,8 @@
     [X] 10a- fichier vide
     [X] 10b- ligne inconnue, coordonnée invalide, mot-clé sans valeur
     [X] 10c- première ligne qui n'est pas « project »
-[ ] 11- StorageBasedRegistry : publier un artefact puis le retrouver (publish, lookup)
-[ ] 12- StorageBasedRegistry : refuser de republier une coordonnée déjà publiée (AlreadyPublishedException)
+[X] 11- StorageBasedRegistry : publier un artefact puis le retrouver (publish, lookup)
+[X] 12- StorageBasedRegistry : refuser de republier une coordonnée déjà publiée (AlreadyPublishedException)
 [ ] 13- AllVersionsResolver : résoudre un artefact sans dépendance
 [ ] 14- AllVersionsResolver : calculer la fermeture transitive des dépendances
 [ ] 15- AllVersionsResolver : garder toutes les versions d'un même artefact (pas de résolution de conflit)
