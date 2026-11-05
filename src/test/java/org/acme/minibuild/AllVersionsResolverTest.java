@@ -4,6 +4,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
@@ -40,5 +43,20 @@ class AllVersionsResolverTest {
 
         assertEquals(Set.of(LIB_A, LIB_B, LIB_C), resolved);          // JUnit seul
         assertThat(resolved, containsInAnyOrder(LIB_A, LIB_B, LIB_C)); // Hamcrest
+    }
+
+    // Q18 — test orienté INTERACTION (même scénario)
+    // [IRegistry | lookup(a) ↦ Some(A), lookup(b) ↦ Some(B), lookup(c) ↦ Some(C)]sp
+    //     ⊢  resolve({a})
+    //     ⇒  ∀ g ∈ {a, b, c} · lookup(g) ×1, et aucun autre appel au registre
+    //     où A = Artifact(a, {b}), B = Artifact(b, {c}), C = Artifact(c, ∅)
+    @Test
+    void resolveInterrogeLeRegistreUneSeuleFoisParCoordonnee() {
+        resolver.resolve(Set.of(LIB_A));
+
+        verify(registry, times(1)).lookup(LIB_A);
+        verify(registry, times(1)).lookup(LIB_B);
+        verify(registry, times(1)).lookup(LIB_C);
+        verifyNoMoreInteractions(registry);
     }
 }

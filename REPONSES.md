@@ -152,3 +152,14 @@ Pour faire échouer les deux assertions, on a cassé volontairement le résolveu
   ```
 
 **Comparaison.** `assertEquals` affiche les deux ensembles en entier, dans l'ordre arbitraire d'un `Set` : c'est à nous de les comparer élément par élément pour trouver ce qui manque. Le message de Hamcrest le dit directement : « no item matches: lib-c », c'est-à-dire **quel élément manque**. Sur un `Set`, `assertEquals` ne dépend déjà pas de l'ordre (l'égalité de deux `Set` ignore l'ordre) : l'apport de Hamcrest est ici **la clarté du message d'échec**, comme l'annonce le cours Outils (« des messages d'échec explicites »).
+
+
+## Question 18
+
+> Écrire un test orienté interaction sur le même scénario : vérifier avec `verify` que `AllVersionsResolver` interroge le registre pour chacune des trois coordonnées, et une seule fois pour chacune. Quelle propriété du résolveur ce second test capture-t-il, que le premier ne capture pas ?
+
+Description du test : `[IRegistry | lookup(a) ↦ Some(A), lookup(b) ↦ Some(B), lookup(c) ↦ Some(C)]sp ⊢ resolve({a}) ⇒ ∀ g ∈ {a, b, c} · lookup(g) ×1`, et aucun autre appel au registre. La doublure est la même qu'à la question 17, mais elle joue cette fois le rôle d'un **Spy** : on vérifie après coup, avec `verify(registry, times(1)).lookup(…)` et `verifyNoMoreInteractions(registry)`, les appels qu'elle a reçus.
+
+**Propriété capturée : le résolveur n'interroge pas plusieurs fois le registre pour une même coordonnée** (pas de travail redondant). Le test d'état de la question 17 ne peut pas la voir : qu'on interroge le registre une ou deux fois pour la même coordonnée, l'ensemble renvoyé est le même, puisqu'un `Set` ignore les doublons. Seule l'observation des appels (les sorties indirectes du résolveur vers le registre) la révèle.
+
+**Remarque : ce test est vert d'emblée.** Sur la chaîne a → b → c, la version naïve interroge déjà chaque coordonnée une seule fois. Le test ne devient discriminant que sur un **losange** (a → b, a → c, b → d, c → d), où la version naïve interroge deux fois d (une fois en passant par b, une fois par c). Un test qui passe dès qu'on l'écrit n'a jamais été vu rouge : il doit faire douter de son pouvoir de détection. On ajoutera le cas du losange à la question 19.
