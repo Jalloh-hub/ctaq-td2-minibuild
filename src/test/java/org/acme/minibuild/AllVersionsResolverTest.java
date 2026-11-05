@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 class AllVersionsResolverTest {
 
@@ -58,5 +59,18 @@ class AllVersionsResolverTest {
         verify(registry, times(1)).lookup(LIB_B);
         verify(registry, times(1)).lookup(LIB_C);
         verifyNoMoreInteractions(registry);
+    }
+
+    // Q19 — cycle dans les données du registre bouchonné : lib-c dépend de lib-a.
+    // [IRegistry | lookup(a) ↦ Some(A), lookup(b) ↦ Some(B), lookup(c) ↦ Some(C')]s
+    //     ⊢  resolve({a})  ⇒  {a, b, c}
+    //     où A = Artifact(a, {b}), B = Artifact(b, {c}), C' = Artifact(c, {a})
+    // @Timeout : un résolveur qui boucle ferait échouer le test au lieu de le bloquer.
+    @Test
+    @Timeout(2)
+    void resolveTermineEnPresenceDUnCycle() {
+        when(registry.lookup(LIB_C)).thenReturn(Optional.of(new Artifact(LIB_C, Set.of(LIB_A))));
+
+        assertThat(resolver.resolve(Set.of(LIB_A)), containsInAnyOrder(LIB_A, LIB_B, LIB_C));
     }
 }
