@@ -11,6 +11,8 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class LineBasedPomParserTest {
 
@@ -71,5 +73,32 @@ class LineBasedPomParserTest {
         Project project = parser.parse(reader);
 
         assertThat(project.dependencies(), containsInAnyOrder(LIB_A, LIB_B));
+    }
+
+    // 14.5
+    // [ILineReader | readLine ↦ ⟨"project mon-app", ligne, ⊥⟩]s
+    //     ⊢  parse(reader)  ⇒  ↯ InvalidBuildFileException
+    // pour ligne ∈ {ligne inconnue, coordonnée invalide, mot-clé sans valeur}
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "plugin org.acme:lib-a:1.0.0",
+        "dependency org.acme:lib-a",
+        "dependency"
+    })
+    void uneLigneMalFormeeEstRejetee(String ligne) throws IOException {
+        ILineReader reader = mock(ILineReader.class);
+        when(reader.readLine()).thenReturn("project mon-app", ligne, null);
+
+        assertThrows(InvalidBuildFileException.class, () -> parser.parse(reader));
+    }
+
+    // [ILineReader | readLine ↦ ⟨"dependency org.acme:lib-a:1.0.0", ⊥⟩]s
+    //     ⊢  parse(reader)  ⇒  ↯ InvalidBuildFileException
+    @Test
+    void laPremiereLigneDoitDeclarerLeProjet() throws IOException {
+        ILineReader reader = mock(ILineReader.class);
+        when(reader.readLine()).thenReturn("dependency org.acme:lib-a:1.0.0", (String) null);
+
+        assertThrows(InvalidBuildFileException.class, () -> parser.parse(reader));
     }
 }

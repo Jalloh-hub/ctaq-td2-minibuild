@@ -15,6 +15,9 @@
 [X] 8- LineBasedPomParser : lire les lignes "dependency" (dépendances directes)
 [X] 9- LineBasedPomParser : ignorer les lignes vides
 [ ] 10- LineBasedPomParser : refuser un fichier mal formé
+    [X] 10a- fichier vide
+    [ ] 10b- ligne inconnue, coordonnée invalide, mot-clé sans valeur
+    [ ] 10c- première ligne qui n'est pas « project »
 [ ] 11- StorageBasedRegistry : publier un artefact puis le retrouver (publish, lookup)
 [ ] 12- StorageBasedRegistry : refuser de republier une coordonnée déjà publiée (AlreadyPublishedException)
 [ ] 13- AllVersionsResolver : résoudre un artefact sans dépendance
