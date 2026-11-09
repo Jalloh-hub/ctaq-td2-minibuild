@@ -253,3 +253,22 @@ La hauteur de `BuildTool` est 3 et non 2 : on prend le **plus long** chemin, cel
 - **par hauteur** (ordre **ascendant**, on part des feuilles) : le lecteur est au niveau du stockage (0, à intégrer en premier), le parseur au niveau du registre (1).
 
 Conséquence : l'ordre d'intégration descendant (question 24) se construira niveau par niveau de profondeur, et l'ordre ascendant (partie suivante) niveau par niveau de hauteur, et ces deux découpages ne sont pas le miroir l'un de l'autre.
+
+## Question 24
+
+> Proposer un ordre d'intégration descendant pour minibuild. Pour chaque étape, indiquer les composants ajoutés, les interfaces testées, les bouchons nécessaires et les pilotes nécessaires.
+
+On suit la démarche incrémentale du cours (C2, diapositive 40) : on part du sommet du graphe (`BuildTool`, profondeur 0) et, à chaque étape, on **ajoute** un composant à ceux déjà intégrés (l'intégration est **cumulative**). Chaque étape est caractérisée par l'interface qu'elle permet de tester. Les composants appelés qui ne sont pas encore intégrés sont remplacés par des **bouchons**.
+
+| Étape | Composants ajoutés | Interface testée | Bouchons | Pilotes |
+|---|---|---|---|---|
+| 1 | `BuildTool`, `LineBasedPomParser` | `BuildTool`–`IPomParser` | lecteur de lignes (`ILineReader`), résolveur (`IResolver`) | — |
+| 2 | `AllVersionsResolver` | `BuildTool`–`IResolver` | lecteur de lignes, registre (`IRegistry`) | — |
+| 3 | `BufferedLineReader` | `LineBasedPomParser`–`ILineReader` | registre | — |
+| 4 | `StorageBasedRegistry` | `AllVersionsResolver`–`IRegistry` | stockage (`IStorage`) | — |
+| 5 | `InMemoryStorage` | `StorageBasedRegistry`–`IStorage` | — | — |
+
+- **Aucun pilote** : en descendant, le composant le plus haut intégré est toujours `BuildTool`, qui n'a pas d'appelant (question 22). Le test l'appelle directement.
+- **Les bouchons disparaissent un à un** : à chaque étape, le composant ajouté remplace le bouchon qui le simulait, mais il peut en faire apparaître un nouveau pour ses propres appelés (à l'étape 2, le résolveur réel remplace le bouchon du résolveur, mais il faut désormais un bouchon du registre).
+- **Les étapes 2 et 3 peuvent être permutées** : elles concernent deux branches indépendantes du graphe.
+- On aurait aussi pu intégrer « niveau par niveau » selon la profondeur (question 23) : {`BuildTool`}, puis {parseur, résolveur}, puis {lecteur, registre}, puis {stockage}. Mais la première étape ne teste alors **aucune interface** (`BuildTool` seul avec deux bouchons, c'est le test unitaire de la question 21) ; la démarche du cours commence donc par une **paire** appelant–appelé.
