@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -68,6 +69,24 @@ class TopDownIntegrationTest {
     void etape2LesDependancesLuesSontResoluesTransitivement() throws IOException {
         ILineReader reader = mock(ILineReader.class);
         when(reader.readLine()).thenReturn("project mon-app", "dependency org.acme:lib-a:1.0.0", null);
+        IRegistry registry = mock(IRegistry.class);
+        when(registry.lookup(LIB_A)).thenReturn(Optional.of(new Artifact(LIB_A, Set.of(LIB_C))));
+        when(registry.lookup(LIB_C)).thenReturn(Optional.of(new Artifact(LIB_C, Set.of())));
+        BuildTool buildTool =
+            new BuildTool(new LineBasedPomParser(), new AllVersionsResolver(registry));
+
+        assertThat(buildTool.build(reader), is(Set.of(LIB_A, LIB_C)));
+    }
+
+    // Étape 3 — ajouté : BufferedLineReader ; interface testée : LineBasedPomParser–ILineReader.
+    // Bouchon : IRegistry. Pilote : aucun. Le texte du fichier vient d'un StringReader.
+    // [IRegistry | lookup(a) ↦ Some(A), lookup(c) ↦ Some(C)]s
+    //     ⊢  build(BufferedLineReader("project mon-app\n\ndependency a\n"))  ⇒  {a, c}
+    //     où A = Artifact(a, {c}), C = Artifact(c, ∅)
+    @Test
+    void etape3LeFichierEstLuParUnVraiLecteur() throws IOException {
+        ILineReader reader = new BufferedLineReader(new StringReader(
+            "project mon-app\n\ndependency org.acme:lib-a:1.0.0\n"));
         IRegistry registry = mock(IRegistry.class);
         when(registry.lookup(LIB_A)).thenReturn(Optional.of(new Artifact(LIB_A, Set.of(LIB_C))));
         when(registry.lookup(LIB_C)).thenReturn(Optional.of(new Artifact(LIB_C, Set.of())));
