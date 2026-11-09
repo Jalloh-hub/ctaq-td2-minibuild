@@ -323,3 +323,21 @@ C'est précisément le défaut d'interface décrit en introduction de la partie 
 - si le bouchon renvoie pour `lookup(a)` un artefact dont la coordonnée n'est pas `a`, ou un graphe qu'aucun vrai registre ne pourrait contenir, le test vérifie une situation qui n'arrivera jamais.
 
 Plus on descend, plus le bouchon doit reproduire de logique : à l'étape 4, le bouchon du stockage doit renvoyer exactement ce que le vrai registre y aurait rangé par `publish`. Ce n'est qu'à l'étape 5, sans bouchon, que les artefacts sont mis en place par la vraie porte d'entrée (`publish`), ce qui garantit leur cohérence.
+
+## Question 28
+
+> Proposer un ordre d'intégration ascendant pour minibuild, sous la même forme qu'en question 24.
+
+Le cours (C2, diapositive 36) : la stratégie incrémentale ascendante consiste à « regrouper et intégrer les composants de plus bas niveau d'abord » ; ce sont alors les **pilotes** qui sont simulés. On part des feuilles du graphe (hauteur 0, question 23) et on remonte, en intégrant chaque fois une **paire** appelant–appelé (même démarche cumulative qu'en question 24). Un composant n'est ajouté que lorsque tous ses appelés sont déjà réels : **aucun bouchon** n'est nécessaire.
+
+| Étape | Composants ajoutés | Interface testée | Bouchons | Pilotes |
+|---|---|---|---|---|
+| 1 | `StorageBasedRegistry`, `InMemoryStorage` | `StorageBasedRegistry`–`IStorage` | — | à la place du résolveur (appelant du registre) |
+| 2 | `LineBasedPomParser`, `BufferedLineReader` | `LineBasedPomParser`–`ILineReader` | — | à la place de `BuildTool` (appelant du parseur) |
+| 3 | `AllVersionsResolver` | `AllVersionsResolver`–`IRegistry` | — | à la place de `BuildTool` (appelant du résolveur) |
+| 4 | `BuildTool` | `BuildTool`–`IPomParser`, `BuildTool`–`IResolver` | — | — |
+
+- **Aucun bouchon** : à chaque étape, les composants appelés par ceux qu'on ajoute sont déjà intégrés et réels.
+- **Un pilote par étape, sauf la dernière** : le pilote joue l'appelant non encore intégré ; dans les tests, c'est la **classe de test elle-même** qui joue ce rôle (elle appelle le composant le plus haut de l'assemblage, lui fournit les jeux d'essai et recueille les résultats). À l'étape 4, `BuildTool` n'a pas d'appelant (question 22) : plus de pilote.
+- **Les étapes 1 et 2 peuvent être permutées** : elles concernent deux branches indépendantes du graphe.
+- Ce n'est pas le miroir de l'ordre descendant (question 23) : le lecteur (hauteur 0) est intégré dès le début avec son parseur, alors qu'en descendant il n'arrivait qu'à l'étape 3 ; et `BuildTool` teste ses **deux** interfaces à la dernière étape, alors qu'en descendant elles étaient testées aux étapes 1 et 2.
