@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
@@ -23,6 +24,7 @@ class TopDownIntegrationTest {
 
     private static final Gav LIB_A = Gav.parse("org.acme:lib-a:1.0.0");
     private static final Gav LIB_B = Gav.parse("org.acme:lib-b:2.1.0");
+    private static final Gav LIB_C = Gav.parse("org.other:lib-c:3.0.0");
 
     // Étape 1 — ajoutés : BuildTool + LineBasedPomParser ; interface testée : BuildTool–IPomParser.
     // Bouchons : ILineReader, IResolver. Pilote : aucun.
@@ -55,5 +57,23 @@ class TopDownIntegrationTest {
 
         assertThrows(InvalidBuildFileException.class, () -> buildTool.build(reader));
         verify(resolver, never()).resolve(any());
+    }
+
+    // Étape 2 — ajouté : AllVersionsResolver ; interface testée : BuildTool–IResolver.
+    // Bouchons : ILineReader, IRegistry. Pilote : aucun.
+    // [ILineReader | readLine ↦ ⟨"project mon-app", "dependency a", ⊥⟩]s,
+    // [IRegistry | lookup(a) ↦ Some(A), lookup(c) ↦ Some(C)]s  ⊢  build(reader)  ⇒  {a, c}
+    //     où A = Artifact(a, {c}), C = Artifact(c, ∅)
+    @Test
+    void etape2LesDependancesLuesSontResoluesTransitivement() throws IOException {
+        ILineReader reader = mock(ILineReader.class);
+        when(reader.readLine()).thenReturn("project mon-app", "dependency org.acme:lib-a:1.0.0", null);
+        IRegistry registry = mock(IRegistry.class);
+        when(registry.lookup(LIB_A)).thenReturn(Optional.of(new Artifact(LIB_A, Set.of(LIB_C))));
+        when(registry.lookup(LIB_C)).thenReturn(Optional.of(new Artifact(LIB_C, Set.of())));
+        BuildTool buildTool =
+            new BuildTool(new LineBasedPomParser(), new AllVersionsResolver(registry));
+
+        assertThat(buildTool.build(reader), is(Set.of(LIB_A, LIB_C)));
     }
 }
