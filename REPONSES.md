@@ -303,3 +303,23 @@ Code : `TopDownIntegrationTest`, un test par étape (tags `td2-q26-etape2` à `t
 | 5 | `InMemoryStorage` | `StorageBasedRegistry`–`IStorage` | aucun | A et C publiés par `publish` dans le vrai registre, puis `build(…) ⇒ {a, c}` |
 
 avec `A = Artifact(a, {c})` et `C = Artifact(c, ∅)`. À chaque étape, le composant ajouté remplace le bouchon qui le simulait ; le bouchon descend d'un niveau dans le graphe, jusqu'à disparaître à l'étape 5, où le système est entièrement assemblé.
+
+## Question 27
+
+> Le cours (C2, diapositive 35) indique que la stratégie descendante détecte tôt les défauts de structure, mais que la logique des bouchons doit être élaborée. Illustrer ces deux points sur votre intégration de minibuild.
+
+Le cours (C2, diapositive 35) : la stratégie incrémentale descendante consiste à « regrouper et intégrer d'abord les composants de plus haut niveau et simuler les composants de plus bas niveau ». Avantage : « les défauts de structure sont détectés très tôt ». Inconvénient : « la logique des souches doit être élaborée. Elles doivent retourner au composant à tester des valeurs qui correspondent aux différents contextes d'appels ».
+
+**Défauts de structure détectés tôt.** Dès l'**étape 1**, avant même qu'existent un registre ou un stockage réels, on vérifie l'enchaînement `BuildTool` → parseur → résolveur :
+
+- les dépendances lues dans le fichier sont bien **transmises** au résolveur (`verify(resolver).resolve({a, b})`) ;
+- un fichier vide fait **remonter** `InvalidBuildFileException` à travers `BuildTool` sans que le résolveur soit sollicité.
+
+C'est précisément le défaut d'interface décrit en introduction de la partie 4 : si le parseur avait renvoyé `null` pour un fichier vide, le test unitaire de `BuildTool` (bouchon qui renvoie toujours un `Project`) serait resté vert, mais l'étape 1 aurait échoué par une `NullPointerException`. L'architecture générale (qui appelle qui, avec quelles données) est donc validée dès les premières étapes.
+
+**La logique des bouchons doit être élaborée.** Aux étapes 2 à 4, le bouchon du registre (puis celui du stockage) ne peut pas renvoyer n'importe quoi : il doit simuler un registre **cohérent**, c'est-à-dire renvoyer des artefacts dont les dépendances existent elles aussi. Dans nos tests, `A = Artifact(a, {c})` oblige le bouchon à répondre aussi à `lookup(c)` (puis `get(c)`) avec `C = Artifact(c, ∅)`. Un bouchon incohérent fait échouer ou réussir le test pour de **mauvaises raisons** :
+
+- si on oublie `lookup(c)`, Mockito renvoie par défaut un `Optional` vide, comme si `c` n'avait jamais été publiée. Notre résolveur garde alors `c` dans le résultat sans explorer ses dépendances : le test passe quand même, mais il valide un registre où `a` dépend d'un artefact **inexistant**, situation qu'un vrai registre bien alimenté ne présente pas. Si `c` avait elle-même des dépendances, elles disparaîtraient du résultat et le test échouerait à cause du bouchon, et non du code ;
+- si le bouchon renvoie pour `lookup(a)` un artefact dont la coordonnée n'est pas `a`, ou un graphe qu'aucun vrai registre ne pourrait contenir, le test vérifie une situation qui n'arrivera jamais.
+
+Plus on descend, plus le bouchon doit reproduire de logique : à l'étape 4, le bouchon du stockage doit renvoyer exactement ce que le vrai registre y aurait rangé par `publish`. Ce n'est qu'à l'étape 5, sans bouchon, que les artefacts sont mis en place par la vraie porte d'entrée (`publish`), ce qui garantit leur cohérence.
