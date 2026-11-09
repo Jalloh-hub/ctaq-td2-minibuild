@@ -272,3 +272,19 @@ On suit la démarche incrémentale du cours (C2, diapositive 40) : on part du so
 - **Les bouchons disparaissent un à un** : à chaque étape, le composant ajouté remplace le bouchon qui le simulait, mais il peut en faire apparaître un nouveau pour ses propres appelés (à l'étape 2, le résolveur réel remplace le bouchon du résolveur, mais il faut désormais un bouchon du registre).
 - **Les étapes 2 et 3 peuvent être permutées** : elles concernent deux branches indépendantes du graphe.
 - On aurait aussi pu intégrer « niveau par niveau » selon la profondeur (question 23) : {`BuildTool`}, puis {parseur, résolveur}, puis {lecteur, registre}, puis {stockage}. Mais la première étape ne teste alors **aucune interface** (`BuildTool` seul avec deux bouchons, c'est le test unitaire de la question 21) ; la démarche du cours commence donc par une **paire** appelant–appelé.
+
+## Question 25
+
+> Implémenter l'étape 1 de votre ordre descendant : les composants ajoutés sont réels, les autres sont simulés. Le test porte sur l'interface entre les composants ajoutés, pas sur leur logique interne, déjà couverte par les tests unitaires de la partie 3. En quoi ce test diffère-t-il du test unitaire de `BuildTool` (question 21) ?
+
+Code : `TopDownIntegrationTest` (tag `td2-q25`). `BuildTool` et `LineBasedPomParser` sont **réels** ; le lecteur de lignes et le résolveur sont des **bouchons** ; il n'y a pas de pilote, le test appelle directement `BuildTool`.
+
+- `[ILineReader | readLine ↦ ⟨"project mon-app", "dependency a", "dependency b", ⊥⟩]s, [IResolver | resolve({a, b}) ↦ {a, b}, resolve({a, b}) ×1]sp ⊢ build(reader) ⇒ {a, b}`
+- `[ILineReader | readLine ↦ ⟨⊥⟩]s, [IResolver | resolve ×0]sp ⊢ build(reader) ⇒ ↯ InvalidBuildFileException`
+
+**Différence avec le test unitaire de la question 21 : le parseur est réel.** À la question 21, le parseur était un bouchon qui renvoyait **toujours** un `Project` bien formé : le test vérifiait seulement que `BuildTool` enchaîne deux appels, avec une hypothèse sur ce que renvoie `parse` que personne ne contrôlait. Ici, on vérifie l'**interface** `BuildTool`–`IPomParser` telle qu'elle est réellement réalisée :
+
+- `BuildTool` comprend le `Project` **produit par le vrai parseur** : les dépendances lues dans le fichier arrivent bien au résolveur ;
+- quand le parseur rencontre un fichier vide, son choix (lever `InvalidBuildFileException`, question 14.1) **remonte** à travers `BuildTool` sans que le résolveur soit sollicité. C'est exactement le défaut d'interface décrit en introduction de la partie 4 : si le parseur avait renvoyé `null`, les deux tests unitaires seraient verts, et c'est ce test d'intégration qui échouerait (`NullPointerException`).
+
+Le test ne revérifie pas la logique interne du parseur (lignes vides, coordonnées mal formées…), déjà couverte par `LineBasedPomParserTest`.
