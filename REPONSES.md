@@ -198,3 +198,34 @@ Dans chaque cas, le test échoue alors que le résolveur fonctionne toujours : c
 - le résolveur ne doit **jamais** publier (`never()).publish(…)`).
 
 En revanche, « interroger le registre exactement une fois par coordonnée » relève plutôt d'un choix d'implémentation (une exigence de performance). Il est utile de le tester quand on veut justement garantir cette propriété, comme pour le losange de la question 19, mais en sachant que ce test devra évoluer avec l'implémentation. C'est ce que dit le cours Outils : la vérification d'état observe ce que le composant **produit**, la vérification d'interaction **comment** il collabore, et seule la première est indépendante de la façon dont il est écrit.
+
+## Question 22
+
+> Reprendre le graphe d'appel de minibuild. Pour chaque composant, indiquer qui sont ses appelants et ses appelés. Quels composants n'ont aucun appelant ? Aucun appelé ?
+
+Graphe d'appel (une flèche va de l'appelant vers l'appelé) :
+
+```
+                         BuildTool
+                       /           \
+        LineBasedPomParser       AllVersionsResolver
+                |                         |
+        BufferedLineReader       StorageBasedRegistry
+                                          |
+                                   InMemoryStorage
+```
+
+| Composant | Appelants | Appelés |
+|---|---|---|
+| `BuildTool` | — | `LineBasedPomParser`, `AllVersionsResolver` |
+| `LineBasedPomParser` | `BuildTool` | `BufferedLineReader` |
+| `AllVersionsResolver` | `BuildTool` | `StorageBasedRegistry` |
+| `StorageBasedRegistry` | `AllVersionsResolver` | `InMemoryStorage` |
+| `InMemoryStorage` | `StorageBasedRegistry` | — |
+| `BufferedLineReader` | `LineBasedPomParser` | — |
+
+**Aucun appelant : `BuildTool`** (le sommet du graphe, c'est lui qu'on lance). **Aucun appelé : `InMemoryStorage` et `BufferedLineReader`** (les feuilles, qui ne dépendent d'aucun autre composant de minibuild).
+
+Le graphe est un **arbre** : chaque composant, sauf `BuildTool`, a un seul appelant. Il a deux branches : la branche de lecture (`BuildTool` → parseur → lecteur de lignes) et la branche de résolution (`BuildTool` → résolveur → registre → stockage), plus longue d'un niveau.
+
+Conséquence pour l'intégration (cours C2, diapositives 24-25) : un composant sans appelant n'aura jamais besoin d'un **pilote** une fois intégré lui-même ; un composant sans appelé n'aura jamais besoin de **bouchon**. Le **pilote** remplace un appelant non encore intégré, le **bouchon** remplace un appelé non encore intégré.
