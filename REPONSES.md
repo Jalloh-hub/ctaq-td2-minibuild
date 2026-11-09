@@ -288,3 +288,18 @@ Code : `TopDownIntegrationTest` (tag `td2-q25`). `BuildTool` et `LineBasedPomPar
 - quand le parseur rencontre un fichier vide, son choix (lever `InvalidBuildFileException`, question 14.1) **remonte** à travers `BuildTool` sans que le résolveur soit sollicité. C'est exactement le défaut d'interface décrit en introduction de la partie 4 : si le parseur avait renvoyé `null`, les deux tests unitaires seraient verts, et c'est ce test d'intégration qui échouerait (`NullPointerException`).
 
 Le test ne revérifie pas la logique interne du parseur (lignes vides, coordonnées mal formées…), déjà couverte par `LineBasedPomParserTest`.
+
+## Question 26
+
+> Poursuivre l'intégration descendante jusqu'à ce que tous les composants soient réels. À chaque étape, conserver les tests des étapes précédentes : ils doivent continuer à passer.
+
+Code : `TopDownIntegrationTest`, un test par étape (tags `td2-q26-etape2` à `td2-q26-etape5`) ; les tests des étapes précédentes sont conservés et passent toujours.
+
+| Étape | Composant réel ajouté | Interface testée | Bouchons restants | Scénario |
+|---|---|---|---|---|
+| 2 | `AllVersionsResolver` | `BuildTool`–`IResolver` | lecteur, registre | `[ILineReader \| readLine ↦ ⟨"project mon-app", "dependency a", ⊥⟩]s, [IRegistry \| lookup(a) ↦ Some(A), lookup(c) ↦ Some(C)]s ⊢ build(reader) ⇒ {a, c}` |
+| 3 | `BufferedLineReader` | `LineBasedPomParser`–`ILineReader` | registre | même registre ; vrai texte `"project mon-app\n\ndependency a\n"` (avec une ligne vide) lu par un `StringReader` |
+| 4 | `StorageBasedRegistry` | `AllVersionsResolver`–`IRegistry` | stockage | `[IStorage \| get(a) ↦ Some(A), get(c) ↦ Some(C)]s ⊢ build(…) ⇒ {a, c}` |
+| 5 | `InMemoryStorage` | `StorageBasedRegistry`–`IStorage` | aucun | A et C publiés par `publish` dans le vrai registre, puis `build(…) ⇒ {a, c}` |
+
+avec `A = Artifact(a, {c})` et `C = Artifact(c, ∅)`. À chaque étape, le composant ajouté remplace le bouchon qui le simulait ; le bouchon descend d'un niveau dans le graphe, jusqu'à disparaître à l'étape 5, où le système est entièrement assemblé.
