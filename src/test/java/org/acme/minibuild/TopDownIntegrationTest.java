@@ -95,4 +95,22 @@ class TopDownIntegrationTest {
 
         assertThat(buildTool.build(reader), is(Set.of(LIB_A, LIB_C)));
     }
+
+    // Étape 4 — ajouté : StorageBasedRegistry ; interface testée : AllVersionsResolver–IRegistry.
+    // Bouchon : IStorage. Pilote : aucun.
+    // [IStorage | get(a) ↦ Some(A), get(c) ↦ Some(C)]s
+    //     ⊢  build(BufferedLineReader("project mon-app\ndependency a\n"))  ⇒  {a, c}
+    //     où A = Artifact(a, {c}), C = Artifact(c, ∅)
+    @Test
+    void etape4LeResolveurInterrogeLeVraiRegistre() throws IOException {
+        ILineReader reader = new BufferedLineReader(new StringReader(
+            "project mon-app\ndependency org.acme:lib-a:1.0.0\n"));
+        IStorage storage = mock(IStorage.class);
+        when(storage.get(LIB_A)).thenReturn(Optional.of(new Artifact(LIB_A, Set.of(LIB_C))));
+        when(storage.get(LIB_C)).thenReturn(Optional.of(new Artifact(LIB_C, Set.of())));
+        BuildTool buildTool = new BuildTool(new LineBasedPomParser(),
+            new AllVersionsResolver(new StorageBasedRegistry(storage)));
+
+        assertThat(buildTool.build(reader), is(Set.of(LIB_A, LIB_C)));
+    }
 }
