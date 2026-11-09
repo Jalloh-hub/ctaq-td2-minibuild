@@ -353,3 +353,28 @@ Code : `BottomUpIntegrationTest` (tag `td2-q29`). `StorageBasedRegistry` et `InM
 3. `⊢ publish(A) ; publish(A') ⇒ ↯ AlreadyPublishedException ; lookup(a) ⇒ Some(A)` : la republication est refusée **et l'original n'est pas écrasé**.
 
 Ce que l'intégration apporte par rapport au test unitaire du registre (question 16) : là, le stockage était un bouchon et l'on vérifiait par `verify(storage, never()).put(…)` que le registre **n'appelait pas** `put` en cas de republication. Ici, le vrai stockage est utilisé et on vérifie l'**état** : après le refus, `lookup` renvoie toujours l'artefact d'origine. C'est l'accord entre le registre et le stockage (ce que `put` range, `get` le rend ; `get` d'une coordonnée absente renvoie un `Optional` vide) qui est testé.
+
+## Question 30
+
+> Comparer les deux stratégies sur ce système : nombre de pilotes, nombre de bouchons, moment où chaque défaut serait détecté. Laquelle recommanderiez-vous ici, et pourquoi ?
+
+D'après les tableaux des questions 24 et 28 :
+
+| Critère | Descendante (Q24) | Ascendante (Q28) |
+|---|---|---|
+| Nombre de pilotes | **0** (le test appelle toujours `BuildTool`, sans appelant) | **3** (étapes 1 à 3 ; aucun à l'étape 4) |
+| Nombre de bouchons | **4** composants simulés à un moment ou un autre : lecteur, résolveur, registre, stockage | **0** |
+| Défauts de structure (enchaînement `BuildTool` → parseur → résolveur, données transmises, exception d'un fichier vide) | détectés **tôt** (étape 1) | détectés **tard** (étape 4, la dernière) |
+| Défauts des interfaces de bas niveau (registre–stockage, parseur–lecteur) | détectés **tard** (étapes 3 et 5) | détectés **tôt** (étapes 1 et 2) |
+
+On retrouve les arguments du cours (C2, diapositives 35 et 36) :
+
+- **descendante** : « les défauts de structure sont détectés très tôt », « moins de pilotes à mettre en œuvre », et les mêmes jeux d'essai se réutilisent d'une étape à l'autre (le scénario a → c sert aux étapes 2 à 5) ; mais « la logique des souches doit être élaborée » (question 27) et les composants de bas niveau ne sont testés qu'à la fin ;
+- **ascendante** : « facilité de localisation des défauts du composant intégré » et « données de test plus faciles à définir » (pas de bouchon à rendre cohérent : on publie de vrais artefacts) ; mais les défauts de haut niveau arrivent en dernier, et les jeux d'essai des pilotes « ne sont réutilisables ni pour les étapes suivantes d'intégration ni en validation car trop spécifiques » (les tests de la question 29 ne parlent que de `publish`/`lookup`).
+
+**Recommandation pour minibuild : la stratégie descendante.**
+
+- Le **risque principal** est dans l'enchaînement de haut niveau (`BuildTool`, résolveur : transmission des dépendances, propagation des erreurs, fermeture transitive), que la descendante teste dès l'étape 1 ;
+- les **feuilles sont simples** (un stockage en mémoire, un adaptateur sur `BufferedReader`) et déjà bien couvertes par leurs tests unitaires : les tester tard est peu risqué ;
+- avec **Mockito**, les bouchons sont peu coûteux à écrire (`when(…).thenReturn(…)`), ce qui atténue le principal inconvénient de la descendante ;
+- à l'inverse, les **pilotes** de l'ascendante sont des tests écrits pour une seule étape, non réutilisables ensuite.
