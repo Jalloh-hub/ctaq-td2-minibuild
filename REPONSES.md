@@ -341,3 +341,15 @@ Le cours (C2, diapositive 36) : la stratégie incrémentale ascendante consiste 
 - **Un pilote par étape, sauf la dernière** : le pilote joue l'appelant non encore intégré ; dans les tests, c'est la **classe de test elle-même** qui joue ce rôle (elle appelle le composant le plus haut de l'assemblage, lui fournit les jeux d'essai et recueille les résultats). À l'étape 4, `BuildTool` n'a pas d'appelant (question 22) : plus de pilote.
 - **Les étapes 1 et 2 peuvent être permutées** : elles concernent deux branches indépendantes du graphe.
 - Ce n'est pas le miroir de l'ordre descendant (question 23) : le lecteur (hauteur 0) est intégré dès le début avec son parseur, alors qu'en descendant il n'arrivait qu'à l'étape 3 ; et `BuildTool` teste ses **deux** interfaces à la dernière étape, alors qu'en descendant elles étaient testées aux étapes 1 et 2.
+
+## Question 29
+
+> Implémenter l'étape 1 de votre ordre ascendant, avec un pilote qui fournit les jeux d'essai.
+
+Code : `BottomUpIntegrationTest` (tag `td2-q29`). `StorageBasedRegistry` et `InMemoryStorage` sont réels ; il n'y a **aucun bouchon** (le stockage n'appelle rien). **La classe de test est le pilote** : elle joue le rôle du résolveur, l'appelant non encore intégré, et, comme le dit le cours (C2, diapositives 24-25), elle « fournit les jeux d'essai au composant à tester et en recueille les résultats ». Trois jeux d'essai :
+
+1. `⊢ publish(A) ; lookup(a) ⇒ Some(A)` : ce qui est publié se retrouve, avec ses dépendances ;
+2. `⊢ lookup(c) ⇒ None` : ce qui n'a jamais été publié est absent ;
+3. `⊢ publish(A) ; publish(A') ⇒ ↯ AlreadyPublishedException ; lookup(a) ⇒ Some(A)` : la republication est refusée **et l'original n'est pas écrasé**.
+
+Ce que l'intégration apporte par rapport au test unitaire du registre (question 16) : là, le stockage était un bouchon et l'on vérifiait par `verify(storage, never()).put(…)` que le registre **n'appelait pas** `put` en cas de republication. Ici, le vrai stockage est utilisé et on vérifie l'**état** : après le refus, `lookup` renvoie toujours l'artefact d'origine. C'est l'accord entre le registre et le stockage (ce que `put` range, `get` le rend ; `get` d'une coordonnée absente renvoie un `Optional` vide) qui est testé.
