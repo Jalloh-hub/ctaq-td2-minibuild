@@ -113,4 +113,22 @@ class TopDownIntegrationTest {
 
         assertThat(buildTool.build(reader), is(Set.of(LIB_A, LIB_C)));
     }
+
+    // Étape 5 — ajouté : InMemoryStorage ; interface testée : StorageBasedRegistry–IStorage.
+    // Plus aucun bouchon : tous les composants sont réels. Le registre est alimenté par
+    // publish, à travers le vrai stockage.
+    // ⊢  build(BufferedLineReader("project mon-app\ndependency a\n"))  ⇒  {a, c}
+    //     où A = Artifact(a, {c}) et C = Artifact(c, ∅) ont été publiés au préalable
+    @Test
+    void etape5TousLesComposantsSontReels() throws Exception {
+        IRegistry registry = new StorageBasedRegistry(new InMemoryStorage());
+        registry.publish(new Artifact(LIB_A, Set.of(LIB_C)));
+        registry.publish(new Artifact(LIB_C, Set.of()));
+        ILineReader reader = new BufferedLineReader(new StringReader(
+            "project mon-app\ndependency org.acme:lib-a:1.0.0\n"));
+        BuildTool buildTool =
+            new BuildTool(new LineBasedPomParser(), new AllVersionsResolver(registry));
+
+        assertThat(buildTool.build(reader), is(Set.of(LIB_A, LIB_C)));
+    }
 }
