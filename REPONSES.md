@@ -229,3 +229,27 @@ Graphe d'appel (une flèche va de l'appelant vers l'appelé) :
 Le graphe est un **arbre** : chaque composant, sauf `BuildTool`, a un seul appelant. Il a deux branches : la branche de lecture (`BuildTool` → parseur → lecteur de lignes) et la branche de résolution (`BuildTool` → résolveur → registre → stockage), plus longue d'un niveau.
 
 Conséquence pour l'intégration (cours C2, diapositives 24-25) : un composant sans appelant n'aura jamais besoin d'un **pilote** une fois intégré lui-même ; un composant sans appelé n'aura jamais besoin de **bouchon**. Le **pilote** remplace un appelant non encore intégré, le **bouchon** remplace un appelé non encore intégré.
+
+## Question 23
+
+> Pour chaque composant, calculer sa hauteur (longueur du plus long chemin vers un composant sans appelé) et sa profondeur (longueur du plus long chemin depuis un composant sans appelant). Que remarquez-vous ?
+
+Une longueur de chemin se compte en **nombre d'arcs** (d'appels) : un composant sans appelé a une hauteur 0, un composant sans appelant a une profondeur 0. Les chemins suivent le graphe de la question 22.
+
+| Composant | Hauteur | Profondeur |
+|---|---|---|
+| `BuildTool` | 3 (→ résolveur → registre → stockage) | 0 |
+| `LineBasedPomParser` | 1 (→ lecteur) | 1 (`BuildTool` →) |
+| `AllVersionsResolver` | 2 (→ registre → stockage) | 1 (`BuildTool` →) |
+| `StorageBasedRegistry` | 1 (→ stockage) | 2 (`BuildTool` → résolveur →) |
+| `InMemoryStorage` | 0 | 3 (`BuildTool` → résolveur → registre →) |
+| `BufferedLineReader` | 0 | 2 (`BuildTool` → parseur →) |
+
+La hauteur de `BuildTool` est 3 et non 2 : on prend le **plus long** chemin, celui de la branche de résolution.
+
+**Remarque : le graphe n'est pas équilibré.** Hauteur + profondeur vaut 3 sur la branche de résolution (`BuildTool`, `AllVersionsResolver`, `StorageBasedRegistry`, `InMemoryStorage`), mais seulement 2 pour `LineBasedPomParser` et `BufferedLineReader` : la branche de lecture est plus courte d'un niveau. Les niveaux ne regroupent donc **pas les mêmes composants** selon qu'on compte depuis le haut ou depuis le bas :
+
+- **par profondeur** (ordre **descendant**, on part du sommet) : le parseur est au niveau du résolveur (1), le lecteur au niveau du registre (2) ;
+- **par hauteur** (ordre **ascendant**, on part des feuilles) : le lecteur est au niveau du stockage (0, à intégrer en premier), le parseur au niveau du registre (1).
+
+Conséquence : l'ordre d'intégration descendant (question 24) se construira niveau par niveau de profondeur, et l'ordre ascendant (partie suivante) niveau par niveau de hauteur, et ces deux découpages ne sont pas le miroir l'un de l'autre.
