@@ -407,3 +407,20 @@ Code : `ValidationTest` et le fichier `src/test/resources/validation/mon-app.bui
 - le **registre réel** (`StorageBasedRegistry` sur `InMemoryStorage`) est pré-alimenté par `publish` dans `@BeforeEach`, avec le graphe de la partie 1 : `lib-a` dépend de `lib-c`, `lib-b` et `lib-c` n'ont pas de dépendance ;
 - **aucune doublure** : tous les composants sont réels ;
 - vérification avec Hamcrest : `assertThat(resolues, containsInAnyOrder(LIB_A, LIB_B, LIB_C))`. On attend la **fermeture transitive** de la spécification (partie 1) : les deux dépendances directes et `lib-c`, dépendance indirecte absente du fichier. `containsInAnyOrder` exprime qu'on attend exactement ces trois éléments, sans imposer d'ordre (un `Set` n'en a pas).
+
+## Question 33
+
+> À la fin de l'intégration descendante (question 26), tous les composants sont réels. En quoi votre dernier test d'intégration diffère-t-il de ce test de validation ?
+
+Les deux tests assemblent les six composants réels, sans doublure, et vérifient le même genre de résultat. Ce qui les distingue n'est pas le code exécuté, mais **ce que chacun cherche à vérifier et d'où il vient** (cours C2) :
+
+| | Dernier test d'intégration (Q26, étape 5) | Test de validation (Q32) |
+|---|---|---|
+| **Conçu à partir de** | l'**architecture** : « documentation d'architecture, documents de conception globale » (C2, diapositive 41) ; l'étape 5 existe parce que le graphe d'appel a une interface registre–stockage | la **spécification** : « les spécifications fonctionnelles, le manuel utilisateur, les cas d'utilisation » (C2, diapositive 45) ; ici l'exemple de la partie 1 et sa fermeture transitive |
+| **Ce qu'il vérifie** | une **interface** précise (`StorageBasedRegistry`–`IStorage`), la dernière ajoutée | un **comportement du système** attendu par l'utilisateur : « tout comportement non conforme au comportement décrit dans les documents d'entrée » (C2, diapositive 45) |
+| **Point de vue** | le test **connaît l'architecture** : les composants, leurs interfaces, l'ordre d'intégration | **boîte noire** : « tests de validation et/ou système traitent le comportement du logiciel complet » (C2, diapositive 44) |
+| **Entrée** | un texte **en mémoire** (`StringReader`), choisi pour exercer l'interface | un **vrai fichier sur disque**, l'interface externe du système, dans un environnement « le plus proche possible de l'environnement final » (C2, diapositive 44) |
+| **Scénario** | minimal (a → c), le même qu'aux étapes 2 à 4 | un **scénario d'usage** complet : le projet de la partie 1, deux dépendances directes, une transitive |
+| **En cas d'échec** | le défaut est dans l'interface ajoutée à cette étape | le système ne fait pas ce que dit la spécification, sans indiquer où |
+
+Autrement dit, le test d'intégration répond à « **les composants se comprennent-ils ?** » (vérification par rapport à la conception), le test de validation à « **le système fait-il ce qu'on attend de lui ?** » (vérification par rapport à la spécification). C'est la correspondance du cycle en V : tests d'intégration en face de la conception globale, tests de validation en face des spécifications fonctionnelles (C2, diapositives 4 et 13).
