@@ -447,3 +447,23 @@ aTraiter.addAll(artefact.dependencies());
 ```
 
 **Conséquence sur la question 27** : un bouchon de registre qui oublierait de répondre pour une dépendance (`lookup(c)` non programmé, donc `Optional` vide) ne fait plus passer le test pour de mauvaises raisons : le résolveur lève maintenant `UnresolvedDependencyException`, et le bouchon incohérent est détecté.
+
+## Question 35
+
+> Un test de validation qui échoue vous indique-t-il quel composant est fautif ? Comparer avec un test unitaire et un test d'intégration qui échouent. Qu'en déduisez-vous sur la complémentarité des trois niveaux ?
+
+**Non.** Un test de validation qui échoue dit que **le système ne répond pas à la spécification**, pas **où** est le défaut. C'est un test « boîte noire » sur le logiciel complet (C2, diapositive 44) : il voit l'entrée (le fichier de build) et la sortie (l'ensemble résolu ou l'exception), pas les composants traversés. Exemple vécu à la question 34 : le test « dépendance absente » échouait (aucune exception levée), mais il aurait pu s'agir du parseur (dépendance mal lue), du résolveur (coordonnée ignorée), du registre ou du stockage (artefact mal rangé). Il a fallu écrire un test unitaire du résolveur pour localiser le défaut.
+
+| Niveau qui échoue | Ce qu'il indique | Localisation |
+|---|---|---|
+| **Unitaire** | un composant ne fait pas ce que dit **sa conception** | **un composant** (tous ses collaborateurs sont doublés : le défaut ne peut être que chez lui) |
+| **Intégration** | deux composants ne s'accordent pas sur **leur interface** | **une interface**, celle ajoutée à l'étape qui échoue |
+| **Validation** | le système ne fait pas ce que dit **la spécification** | **aucune** : seulement « le système est faux » |
+
+**Complémentarité des trois niveaux.** Chaque niveau répond à une question différente, et aucun ne remplace les autres :
+
+- la **validation** dit **si** le logiciel est faux **du point de vue du client** : c'est le seul niveau qui confronte le système à la spécification, et le seul qui révèle un **trou de la spécification** (question 34) ;
+- l'**intégration** et l'**unitaire** disent **où** : à quelle interface, puis dans quel composant ;
+- inversement, des tests unitaires et d'intégration tous verts ne garantissent pas que le système fait ce que le client attend : ils vérifient la conception, pas la spécification.
+
+C'est la structure du cycle en V (C2, diapositives 4 et 13) : chaque niveau de test fait face à un niveau de conception (spécification ↔ validation, conception globale ↔ intégration, conception détaillée ↔ unitaire). En pratique, un échec en validation se **descend** : on écrit un test d'intégration ou unitaire qui reproduit le défaut au plus près de sa cause, on corrige, et les trois niveaux repassent au vert.
