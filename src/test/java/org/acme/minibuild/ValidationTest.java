@@ -2,6 +2,7 @@ package org.acme.minibuild;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.Reader;
 import java.net.URISyntaxException;
@@ -46,6 +47,28 @@ class ValidationTest {
             Set<Gav> resolues = buildTool.build(new BufferedLineReader(fichier));
 
             assertThat(resolues, containsInAnyOrder(LIB_A, LIB_B, LIB_C));
+        }
+    }
+
+    // Q34 — une dépendance absente du registre (lib-x n'a jamais été publiée). Le sujet ne dit
+    // pas quoi faire ; choix fait ici : échouer explicitement plutôt que rendre une fermeture
+    // silencieusement incomplète (le build échouerait plus tard, loin de la cause).
+    @Test
+    void uneDependanceAbsenteDuRegistreFaitEchouerLaResolution() throws Exception {
+        try (Reader fichier = Files.newBufferedReader(ressource("dependance-absente.build"))) {
+            ILineReader reader = new BufferedLineReader(fichier);
+
+            assertThrows(UnresolvedDependencyException.class, () -> buildTool.build(reader));
+        }
+    }
+
+    // Q34 — un fichier syntaxiquement invalide (coordonnée à deux parties seulement).
+    @Test
+    void unFichierInvalideEstRejete() throws Exception {
+        try (Reader fichier = Files.newBufferedReader(ressource("invalide.build"))) {
+            ILineReader reader = new BufferedLineReader(fichier);
+
+            assertThrows(InvalidBuildFileException.class, () -> buildTool.build(reader));
         }
     }
 }
