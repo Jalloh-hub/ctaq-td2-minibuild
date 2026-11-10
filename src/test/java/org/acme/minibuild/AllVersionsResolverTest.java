@@ -3,6 +3,7 @@ package org.acme.minibuild;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -93,5 +94,16 @@ class AllVersionsResolverTest {
         resolver.resolve(Set.of(LIB_A));
 
         verify(registry, times(1)).lookup(libD);
+    }
+
+    // Tâche 20 (découverte en question 34) : lib-b introuvable dans le registre.
+    // [IRegistry | lookup(a) ↦ Some(A), lookup(b) ↦ None]s  ⊢  resolve({a})
+    //     ⇒  ↯ UnresolvedDependencyException
+    //     où A = Artifact(a, {b})
+    @Test
+    void resolveEchoueSurUneDependanceAbsenteDuRegistre() {
+        when(registry.lookup(LIB_B)).thenReturn(Optional.empty());
+
+        assertThrows(UnresolvedDependencyException.class, () -> resolver.resolve(Set.of(LIB_A)));
     }
 }
