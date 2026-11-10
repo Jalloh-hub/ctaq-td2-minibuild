@@ -378,3 +378,20 @@ On retrouve les arguments du cours (C2, diapositives 35 et 36) :
 - les **feuilles sont simples** (un stockage en mémoire, un adaptateur sur `BufferedReader`) et déjà bien couvertes par leurs tests unitaires : les tester tard est peu risqué ;
 - avec **Mockito**, les bouchons sont peu coûteux à écrire (`when(…).thenReturn(…)`), ce qui atténue le principal inconvénient de la descendante ;
 - à l'inverse, les **pilotes** de l'ascendante sont des tests écrits pour une seule étape, non réutilisables ensuite.
+
+## Question 31
+
+> Une troisième voie, présentée dans le cours (C2, diapositive 32), consiste à tout assembler d'un coup (big bang). Quel est son coût en pilotes et bouchons ? Pourquoi est-elle malgré tout déconseillée ?
+
+Le cours (C2, diapositive 32) : dans la stratégie du big-bang, « tous les composants sont assemblés en même temps et le logiciel est testé dans son intégralité ».
+
+**Coût apparent nul : aucun pilote, aucun bouchon.** On assemble directement les six composants réels de minibuild et on lance `build` sur un fichier : c'est exactement le test de l'étape 5 de la question 26, mais sans être passé par les étapes 1 à 4.
+
+**Pourquoi elle est déconseillée** (« le chaos est garanti », C2 diapositive 32) :
+
+- **« Les erreurs sont très difficiles à localiser »** : si `build` ne renvoie pas `{a, c}`, rien n'indique quelle interface est en cause : `BuildTool`–parseur, parseur–lecteur (une ligne vide mal traitée ?), `BuildTool`–résolveur, résolveur–registre (un `Optional` mal lu ?) ou registre–stockage. Avec l'intégration incrémentale, chaque étape n'ajoute qu'une interface : le défaut est dans celle-là ;
+- **« Les tests ne peuvent être préparés à l'avance »** : on attend que tous les composants soient terminés pour commencer à tester les interfaces ;
+- **« Difficulté de planification »** : on ne sait pas combien de temps prendra la mise au point de l'assemblage ;
+- **« Risque d'entrer dans une boucle sans fin de correction/apparition d'erreurs »** : corriger un défaut sans savoir précisément d'où il vient peut en faire apparaître d'autres, que l'on découvre seulement en relançant tout le système.
+
+Les stratégies incrémentales en sont l'« antithèse » (C2, diapositive 34) : « le logiciel est construit et testé par petits morceaux. Les erreurs sont donc plus faciles à localiser et à corriger » et « les interfaces sont testées plus complètement et précisément ». Le coût des pilotes et bouchons est le prix de cette localisation.
