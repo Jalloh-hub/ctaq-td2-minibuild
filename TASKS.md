@@ -27,5 +27,5 @@
 [X] 16- BuildTool : lire le fichier de build puis résoudre ses dépendances
 [X] 17- tests d'intégration : assembler les composants (descendant puis ascendant)
 [ ] 18- tests de validation : système complet, vrai fichier de build en entrée
-[ ] 20- AllVersionsResolver : dépendance absente du registre (tâche découverte en question 34 ;
+[X] 20- AllVersionsResolver : dépendance absente du registre (tâche découverte en question 34 ;
         le sujet ne dit rien : choix d'échouer explicitement)

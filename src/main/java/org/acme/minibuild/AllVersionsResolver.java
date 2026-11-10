@@ -8,7 +8,8 @@ import java.util.Set;
 
 /**
  * Calcule la fermeture transitive des dépendances en interrogeant le registre. Garde toutes
- * les versions rencontrées (aucune résolution de conflit).
+ * les versions rencontrées (aucune résolution de conflit). Échoue si une dépendance est
+ * absente du registre.
  */
 public class AllVersionsResolver implements IResolver {
 
@@ -25,8 +26,9 @@ public class AllVersionsResolver implements IResolver {
         while (!aTraiter.isEmpty()) {
             Gav gav = aTraiter.pop();
             if (resolues.add(gav)) {                          // chaque coordonnée une fois
-                registry.lookup(gav)
-                        .ifPresent(artefact -> aTraiter.addAll(artefact.dependencies()));
+                Artifact artefact = registry.lookup(gav)
+                        .orElseThrow(() -> new UnresolvedDependencyException(gav));
+                aTraiter.addAll(artefact.dependencies());
             }
         }
         return resolues;

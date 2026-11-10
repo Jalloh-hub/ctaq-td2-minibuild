@@ -424,3 +424,26 @@ Les deux tests assemblent les six composants réels, sans doublure, et vérifien
 | **En cas d'échec** | le défaut est dans l'interface ajoutée à cette étape | le système ne fait pas ce que dit la spécification, sans indiquer où |
 
 Autrement dit, le test d'intégration répond à « **les composants se comprennent-ils ?** » (vérification par rapport à la conception), le test de validation à « **le système fait-il ce qu'on attend de lui ?** » (vérification par rapport à la spécification). C'est la correspondance du cycle en V : tests d'intégration en face de la conception globale, tests de validation en face des spécifications fonctionnelles (C2, diapositives 4 et 13).
+
+## Question 34
+
+> Ajouter deux tests de validation supplémentaires : un fichier de build référençant une dépendance absente du registre, et un fichier syntaxiquement invalide. Que doit faire le système dans chaque cas ? La spécification du sujet répond-elle à cette question ?
+
+Code : tags `td2-q33-red` (tests de validation), `td2-q33-unit-red` (exception et test unitaire du résolveur), `td2-q33-green` (correction du résolveur).
+
+- `dependance-absente.build` : le projet dépend de `org.acme:lib-x:9.9.9`, jamais publiée ⇒ `↯ UnresolvedDependencyException` ;
+- `invalide.build` : la ligne `dependency org.acme:lib-a` n'a que deux parties ⇒ `↯ InvalidBuildFileException`.
+
+**La spécification ne répond qu'à moitié.** Pour le fichier invalide, la question 14 avait déjà fixé le comportement : le parseur lève `InvalidBuildFileException` ; le test de validation est vert d'emblée. Pour la dépendance absente, **le sujet ne dit rien** : la partie 1 décrit la fermeture transitive en supposant que tout est publié. Notre résolveur ignorait silencieusement une coordonnée introuvable (`ifPresent`) et renvoyait une fermeture **incomplète** sans le signaler.
+
+**Choix fait : échouer explicitement**, en levant `UnresolvedDependencyException` (non vérifiée, car l'interface fournie `IResolver` ne déclare aucune exception). Une fermeture silencieusement incomplète ferait échouer le build **plus tard, loin de la cause** (à la compilation ou à l'exécution du projet, faute de la bibliothèque). C'est aussi le comportement de Maven et de Gradle : le build échoue sur une dépendance introuvable. (Une alternative aux exceptions serait de renvoyer un `Either<Erreur, Set<Gav>>`, comme avec vavr ; ici, le type de retour est fixé par l'interface `IResolver`.)
+
+**Démarche suivie** : le test de validation révèle un **trou de la spécification** → nouvelle tâche dans la task list (tâche 20) → **test unitaire** du résolveur, qui localise le défaut dans un composant précis → correction :
+
+```java
+Artifact artefact = registry.lookup(gav)
+        .orElseThrow(() -> new UnresolvedDependencyException(gav));
+aTraiter.addAll(artefact.dependencies());
+```
+
+**Conséquence sur la question 27** : un bouchon de registre qui oublierait de répondre pour une dépendance (`lookup(c)` non programmé, donc `Optional` vide) ne fait plus passer le test pour de mauvaises raisons : le résolveur lève maintenant `UnresolvedDependencyException`, et le bouchon incohérent est détecté.
