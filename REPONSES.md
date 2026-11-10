@@ -395,3 +395,15 @@ Le cours (C2, diapositive 32) : dans la stratégie du big-bang, « tous les comp
 - **« Risque d'entrer dans une boucle sans fin de correction/apparition d'erreurs »** : corriger un défaut sans savoir précisément d'où il vient peut en faire apparaître d'autres, que l'on découvre seulement en relançant tout le système.
 
 Les stratégies incrémentales en sont l'« antithèse » (C2, diapositive 34) : « le logiciel est construit et testé par petits morceaux. Les erreurs sont donc plus faciles à localiser et à corriger » et « les interfaces sont testées plus complètement et précisément ». Le coût des pilotes et bouchons est le prix de cette localisation.
+
+## Question 32
+
+> Écrire un test de validation de bout en bout : un vrai fichier de build sur disque, dans les ressources de test ; un vrai `BufferedLineReader` sur ce fichier ; un registre réel, pré-alimenté avec les artefacts et leurs dépendances ; vérification de l'ensemble des dépendances résolues avec Hamcrest.
+
+Code : `ValidationTest` et le fichier `src/test/resources/validation/mon-app.build` (tag `td2-q32`).
+
+- **Le fichier de build** est celui de l'exemple de la partie 1 (`project mon-app`, `dependency org.acme:lib-a:1.0.0`, `dependency org.acme:lib-b:2.1.0`). Placé dans `src/test/resources`, il est copié par Gradle dans le classpath de test et retrouvé par `getResource("/validation/mon-app.build")` ;
+- il est lu par un **vrai `BufferedLineReader`** ouvert sur le fichier (`Files.newBufferedReader`, fermé par un `try`-with-resources) ;
+- le **registre réel** (`StorageBasedRegistry` sur `InMemoryStorage`) est pré-alimenté par `publish` dans `@BeforeEach`, avec le graphe de la partie 1 : `lib-a` dépend de `lib-c`, `lib-b` et `lib-c` n'ont pas de dépendance ;
+- **aucune doublure** : tous les composants sont réels ;
+- vérification avec Hamcrest : `assertThat(resolues, containsInAnyOrder(LIB_A, LIB_B, LIB_C))`. On attend la **fermeture transitive** de la spécification (partie 1) : les deux dépendances directes et `lib-c`, dépendance indirecte absente du fichier. `containsInAnyOrder` exprime qu'on attend exactement ces trois éléments, sans imposer d'ordre (un `Set` n'en a pas).
