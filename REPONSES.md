@@ -581,3 +581,37 @@ Code : tag `td2-q39`.
 **Interprétation.** Les tests unitaires couvrent **tout** à eux seuls : en TDD, chaque instruction a été écrite pour un test unitaire. Les tests d'intégration et de validation couvrent beaucoup de code (près de 90 % des instructions) avec **très peu de tests** (9 et 3), parce que chacun traverse toute la chaîne de composants ; mais ils suivent surtout le **chemin nominal** et laissent de côté la plupart des branches d'erreur (moins de 80 % des branches). Le taux de **branches** est plus révélateur que le taux d'instructions de ce qu'un niveau teste vraiment.
 
 Ce n'est pas un défaut des tests d'intégration et de validation : leur rôle n'est pas de couvrir le code, mais de vérifier les **interfaces** et la **conformité à la spécification** (questions 33 et 35). À l'inverse, ces niveaux apportent ce que la couverture ne mesure pas : la couverture « tous niveaux » n'est pas plus élevée que celle des seuls tests unitaires (100 % dans les deux cas), et pourtant l'intégration et la validation vérifient des choses que les unitaires ne peuvent pas voir : l'intégration aurait détecté le défaut d'interface décrit en introduction de la partie 4 (parseur qui renvoie `null`), et la validation a révélé le trou de spécification de la question 34. **La couverture ne mesure pas la valeur d'un niveau de test.**
+
+## Question 40
+
+> Un taux de couverture élevé garantit-il l'absence de défauts ? JaCoCo mesure notamment la couverture des instructions et celle des branches : à quels critères du cours (C4, diapositive 19) correspondent-elles ? Construire sur minibuild un défaut réel non détecté malgré 100 % de couverture des instructions. Résiste-t-il à 100 % de couverture des branches ?
+
+**Non, un taux de couverture élevé ne garantit pas l'absence de défauts.** La couverture mesure ce que les tests **exécutent**, pas ce qu'ils **vérifient** ni les situations qu'ils n'ont pas imaginées : « 100 % de couverture ne garantit pas l'absence de défauts : un code exécuté n'est pas pour autant correctement vérifié » (cours Outils).
+
+**Correspondance avec les critères du cours (C4, diapositive 19)** :
+
+- couverture des **instructions** de JaCoCo = critère **C0** : « tester toutes les instructions (nœuds) au moins une fois » ;
+- couverture des **branches** de JaCoCo = critère **C1** : « tester toutes les décisions possibles au moins une fois (ou toutes les branches) ».
+
+**Un défaut réel non détecté malgré 100 % de couverture.** À l'étape `td2-q18`, `AllVersionsResolver` était la version récursive naïve :
+
+```java
+public Set<Gav> resolve(Set<Gav> directDependencies) {
+    Set<Gav> resolues = new HashSet<>();
+    for (Gav gav : directDependencies) {
+        resolues.add(gav);
+        registry.lookup(gav)
+                .ifPresent(artefact -> resolues.addAll(resolve(artefact.dependencies())));
+    }
+    return resolues;
+}
+```
+
+Mesuré avec JaCoCo sur cette version, avec les seuls tests de `AllVersionsResolverTest` à ce moment-là (questions 17 et 18, chaîne a → b → c) : **100 % des instructions (45 / 45) et 100 % des branches (2 / 2)** de la classe. Tous les tests sont verts. Pourtant, la classe contient **deux défauts réels** :
+
+- **elle ne termine pas en présence d'un cycle** (a → b → c → a) : chaque appel relance `resolve` sur une coordonnée déjà traitée, jusqu'à la `StackOverflowError` (question 19) ;
+- **elle interroge plusieurs fois une même coordonnée** dans un losange (a → b, a → c, b → d, c → d : `lookup(d)` est appelé deux fois).
+
+**Le défaut résiste-t-il à 100 % des branches ? Oui.** Les deux branches (entrer ou non dans la boucle `for`, c'est-à-dire avoir ou non une dépendance à traiter) sont bien exécutées par la chaîne a → b → c. Le défaut ne tient pas à une **branche non exécutée**, mais à un **chemin** : revenir sur une coordonnée déjà visitée. Ni C0 ni C1 n'exigent ce chemin ; il faudrait un critère plus fort portant sur les chemins ou sur le nombre de passages dans les boucles et les appels récursifs (critères C-i, « passer i fois dans chaque boucle », ou couverture des chemins, C4), que JaCoCo ne mesure pas.
+
+**Ce que montre la question 19** : il a fallu **un test de plus** (le cycle, puis le losange), pas une couverture plus élevée, pour trouver le défaut. Après correction, la couverture est restée à 100 % : elle n'a ni annoncé le défaut, ni mesuré sa correction. La couverture est un **indicateur des parties non testées** (ce qu'on n'a pas exécuté est sûrement mal testé), pas une preuve que ce qui est exécuté est correct. Les cas de test se conçoivent à partir de la spécification et des risques (classes d'équivalence, valeurs limites, cycles), la couverture sert ensuite à repérer ce qu'on a oublié.
