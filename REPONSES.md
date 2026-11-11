@@ -493,3 +493,28 @@ C'est la structure du cycle en V (C2, diapositives 4 et 13) : chaque niveau de t
 - **à la question 34**, faute de spécification, nous avons nous-mêmes **choisi** le comportement (échouer sur une dépendance absente) puis écrit le test qui le vérifie. Une équipe indépendante aurait pu faire un **autre choix** (ignorer la dépendance, ou l'ajouter sans ses dépendances) : le désaccord aurait **révélé l'ambiguïté** de la spécification et forcé à la faire trancher par le client ;
 - nos tests de validation partagent nos **hypothèses** : par exemple, le format de fichier (`project` sur la première ligne, lignes vides ignorées) est celui que nous avons implémenté ; personne d'autre n'a vérifié que c'est bien ce que le client attend ;
 - les tests de validation ressemblent donc davantage à des tests **d'acceptation par le développeur** qu'à une vraie validation. Ils restent utiles (ils ont révélé le trou de la question 34), mais ils ne donnent pas la même garantie qu'une validation indépendante.
+
+## Question 37
+
+> Avant de lancer la mesure : quel taux de couverture attendez-vous, sachant que l'essentiel du code a été écrit en TDD ? Justifier.
+
+JaCoCo mesure notamment la couverture des **instructions** (critère **C0** : « tester toutes les instructions au moins une fois ») et des **branches** des `if`/`switch` (critère **C1** : « tester toutes les décisions possibles au moins une fois ») (C4, diapositive 19 ; cours Outils, « JaCoCo : mesurer la couverture »).
+
+**Prédiction : proche de 100 % en instructions et en branches**, mais pas forcément 100 %.
+
+**Pourquoi proche de 100 %.** En TDD, **aucune ligne de production n'est écrite sans un test rouge qui l'exige** : on écrit le test, puis le code **minimal** qui le fait passer (Fake it, puis triangulation). Chaque instruction et chaque branche a donc été introduite pour faire passer un test, qui l'exécute. Par exemple :
+
+- les deux branches de `Gav.parse` (mauvais nombre de parties, partie vide) viennent des tests de la question 9 ;
+- chaque `throw` de `LineBasedPomParser` vient d'un cycle de la question 14 (fichier vide, ligne inconnue, coordonnée invalide…) ;
+- la branche `if (resolues.add(gav))` du résolveur est exercée dans ses deux sens par le test du cycle et celui du losange (question 19) ;
+- le `orElseThrow` du résolveur vient du test unitaire de la question 34.
+
+Les tests d'intégration et de validation ré-exécutent ensuite ce même code : ils n'ajoutent pas de couverture, mais ne peuvent pas en retirer.
+
+**Pourquoi pas forcément 100 %.** Ce qui **n'a pas été écrit en TDD** peut rester non couvert :
+
+- **`App.java`**, la classe `main` (« Hello World! ») engendrée par `gradle init` à la question 1 : aucun test ne l'appelle, elle devrait apparaître à **0 %** ;
+- les **records** `Artifact` et `Project` et les **exceptions**, écrits sans test dédié (question 10 : on ne teste pas un agrégat de données) : on s'attend à ce qu'ils soient couverts **par leur usage** dans les autres tests, mais un constructeur ou un accesseur jamais utilisé resterait non couvert ;
+- d'éventuelles **branches défensives** (vérifications de `null`, cas « impossibles ») qu'aucun test n'a exigées.
+
+Enfin, même 100 % ne prouverait pas l'absence de défauts : « un code exécuté n'est pas pour autant correctement vérifié » (cours Outils). La couverture mesure ce que les tests **exécutent**, pas ce qu'ils **vérifient**.
