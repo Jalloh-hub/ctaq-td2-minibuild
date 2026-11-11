@@ -467,3 +467,29 @@ aTraiter.addAll(artefact.dependencies());
 - inversement, des tests unitaires et d'intégration tous verts ne garantissent pas que le système fait ce que le client attend : ils vérifient la conception, pas la spécification.
 
 C'est la structure du cycle en V (C2, diapositives 4 et 13) : chaque niveau de test fait face à un niveau de conception (spécification ↔ validation, conception globale ↔ intégration, conception détaillée ↔ unitaire). En pratique, un échec en validation se **descend** : on écrit un test d'intégration ou unitaire qui reproduit le défaut au plus près de sa cause, on corrige, et les trois niveaux repassent au vert.
+
+## Question 36
+
+> Le cours (C1, diapositive 26, « Qui fait quoi ? ») recommande que les tests de validation soient conduits par une équipe indépendante. Pourquoi ? Que recommande-t-il pour les tests d'intégration et pour les tests unitaires, et pourquoi cette différence ? Dans ce TD, vous avez écrit seul les trois niveaux de test : qu'est-ce que cela change ?
+
+**Ce que recommande le cours (C1, « Qui fait quoi ? »)** :
+
+| Niveau | Qui | Force de la recommandation | Pourquoi (C1) |
+|---|---|---|---|
+| **Unitaires** | les **développeurs** | « ne peuvent être conduits que par » | ce sont des tests « **boîte blanche** » : il faut connaître le code ; « le taux de couverture est mesuré durant cette activité » |
+| **Intégration** | une **équipe indépendante** | « **devraient** » | « cela oblige les architectes/concepteurs et les développeurs à **documenter les interfaces** » ; « la gestion des interfaces logicielles et matérielles **n'est pas du ressort des développeurs** » |
+| **Validation** | une **équipe indépendante** | « **doivent** » | ils sont conduits avec une « **vue client (i.e. métier)** » ; ce sont des tests « **boîte noire** (ils ne sont pas structurels) » ; éventuellement par le client lui-même (version bêta) |
+
+**Pourquoi l'indépendance pour la validation.** La validation confronte le système à la **spécification**, du point de vue du client. Une équipe indépendante :
+
+- lit la spécification **sans connaître le code** : elle teste ce que le système doit faire, pas ce qu'il fait ;
+- **ne partage pas les hypothèses** des développeurs, ni leurs **erreurs de compréhension** de la spécification : si le développeur a mal compris une exigence, il écrira un code faux **et** un test faux, cohérents entre eux, et le test passera ;
+- échappe à la « psychologie des développeurs/testeurs » (C1, diapositive 27) : les tests sont souvent construits « avec pour objectif (souvent inconscient) que le système est exempt de défauts ». Celui qui a écrit le code cherche, sans le vouloir, à montrer qu'il marche.
+
+**Pourquoi cette différence entre les niveaux.** Plus on monte dans le cycle en V, plus le test porte sur ce que **d'autres** ont exprimé (les interfaces décidées par les architectes, puis les besoins du client) et moins il a besoin de connaître le code. Le test unitaire, lui, est structurel : seul le développeur connaît assez le code pour l'écrire (et en TDD, il l'écrit même avant le code). L'intégration est intermédiaire (« devraient ») : l'indépendance y est surtout un moyen de forcer la documentation des interfaces.
+
+**Ce que cela change dans ce TD.** Nous avons écrit seuls les trois niveaux, et nos tests de validation sont donc fondés sur **notre propre lecture du sujet** :
+
+- **à la question 34**, faute de spécification, nous avons nous-mêmes **choisi** le comportement (échouer sur une dépendance absente) puis écrit le test qui le vérifie. Une équipe indépendante aurait pu faire un **autre choix** (ignorer la dépendance, ou l'ajouter sans ses dépendances) : le désaccord aurait **révélé l'ambiguïté** de la spécification et forcé à la faire trancher par le client ;
+- nos tests de validation partagent nos **hypothèses** : par exemple, le format de fichier (`project` sur la première ligne, lignes vides ignorées) est celui que nous avons implémenté ; personne d'autre n'a vérifié que c'est bien ce que le client attend ;
+- les tests de validation ressemblent donc davantage à des tests **d'acceptation par le développeur** qu'à une vraie validation. Ils restent utiles (ils ont révélé le trou de la question 34), mais ils ne donnent pas la même garantie qu'une validation indépendante.
