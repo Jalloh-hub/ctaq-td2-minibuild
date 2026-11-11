@@ -10,12 +10,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
  * Tests de validation : système complet, sans aucune doublure, à travers ses interfaces
  * externes (un vrai fichier de build sur disque, un registre réel pré-alimenté).
  */
+@Tag("validation")
 class ValidationTest {
 
     private static final Gav LIB_A = Gav.parse("org.acme:lib-a:1.0.0");

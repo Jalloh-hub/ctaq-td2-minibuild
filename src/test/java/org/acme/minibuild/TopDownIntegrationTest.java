@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Optional;
 import java.util.Set;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.Test;
  * Les composants appelés non encore intégrés sont des bouchons. Aucun pilote : le test appelle
  * directement BuildTool, qui n'a pas d'appelant. Les tests des étapes précédentes sont conservés.
  */
+@Tag("integration")
 class TopDownIntegrationTest {
 
     private static final Gav LIB_A = Gav.parse("org.acme:lib-a:1.0.0");

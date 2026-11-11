@@ -552,3 +552,32 @@ Mesure : `./gradlew test jacocoTestReport`, rapport HTML dans `build/reports/jac
 On retrouve les chiffres du code de référence (360/360 instructions, 24/24 branches). **Aucun test n'a eu besoin d'être ajouté** : c'est la conséquence attendue du TDD.
 
 **Limite** : 100 % en C0 et C1 signifie que chaque instruction et chaque branche a été **exécutée** au moins une fois, pas qu'elle a été **vérifiée**. Un test sans assertion qui appellerait `build` couvrirait tout autant de code. Par exemple, `Artifact` et `Project` sont couverts sans qu'aucun test ne vérifie spécifiquement leur copie défensive. « 100 % de couverture ne garantit pas l'absence de défauts : un code exécuté n'est pas pour autant correctement vérifié » (cours Outils).
+
+## Question 39
+
+> Comparer la couverture apportée par chaque niveau de test en exécutant séparément les tests unitaires, d'intégration et de validation (piste : étiqueter les tests avec l'annotation JUnit `@Tag` et filtrer dans Gradle).
+
+Code : tag `td2-q39`.
+
+- **Étiquettes JUnit** : chaque classe de test porte `@Tag("unit")` (les 7 classes de la partie 2 et 3), `@Tag("integration")` (`TopDownIntegrationTest`, `BottomUpIntegrationTest`) ou `@Tag("validation")` (`ValidationTest`). `SmokeTest` (vérification de l'outillage, question 1) n'est d'aucun niveau et n'a pas d'étiquette.
+- **Tâches Gradle** : `unitTest`, `integrationTest` et `validationTest` (`build.gradle.kts`), chacune de type `Test` filtrée par `useJUnitPlatform { includeTags(niveau) }`, et suivie (`finalizedBy`) d'un rapport JaCoCo propre (`build/reports/jacoco/<niveau>`). La tâche `test` habituelle exécute toujours tous les tests.
+
+```
+./gradlew unitTest integrationTest validationTest
+```
+
+| Tests exécutés | Nombre | Instructions (C0) | Branches (C1) |
+|---|---|---|---|
+| unitaires | 33 | **100 %** (360 / 360) | **100 %** (24 / 24) |
+| intégration | 9 | **88,1 %** (317 / 360) | **79,2 %** (19 / 24) |
+| validation | 3 | **90,6 %** (326 / 360) | **70,8 %** (17 / 24) |
+| tous (`test`) | 48 | 100 % | 100 % |
+
+**Ce que l'intégration et la validation ne couvrent pas** (d'après les rapports) :
+
+- **les cas d'erreur fins**, que seuls les tests unitaires exercent : les coordonnées mal formées de `Gav.parse` (mauvais nombre de parties, partie vide), les différentes erreurs du parseur (ligne inconnue, mot-clé sans valeur, première ligne qui n'est pas `project`), et pour la validation la **non-republication** (`AlreadyPublishedException` et sa branche dans `StorageBasedRegistry` : les tests de validation ne publient jamais deux fois) ;
+- **certaines branches du résolveur** : le cas « coordonnée déjà vue » (cycle, losange de la question 19) n'est exercé que par les tests unitaires ; l'intégration ne passe pas non plus par la dépendance absente (`UnresolvedDependencyException`), vue seulement en validation et en unitaire.
+
+**Interprétation.** Les tests unitaires couvrent **tout** à eux seuls : en TDD, chaque instruction a été écrite pour un test unitaire. Les tests d'intégration et de validation couvrent beaucoup de code (près de 90 % des instructions) avec **très peu de tests** (9 et 3), parce que chacun traverse toute la chaîne de composants ; mais ils suivent surtout le **chemin nominal** et laissent de côté la plupart des branches d'erreur (moins de 80 % des branches). Le taux de **branches** est plus révélateur que le taux d'instructions de ce qu'un niveau teste vraiment.
+
+Ce n'est pas un défaut des tests d'intégration et de validation : leur rôle n'est pas de couvrir le code, mais de vérifier les **interfaces** et la **conformité à la spécification** (questions 33 et 35). À l'inverse, ces niveaux apportent ce que la couverture ne mesure pas : la couverture « tous niveaux » n'est pas plus élevée que celle des seuls tests unitaires (100 % dans les deux cas), et pourtant l'intégration et la validation vérifient des choses que les unitaires ne peuvent pas voir : l'intégration aurait détecté le défaut d'interface décrit en introduction de la partie 4 (parseur qui renvoie `null`), et la validation a révélé le trou de spécification de la question 34. **La couverture ne mesure pas la valeur d'un niveau de test.**

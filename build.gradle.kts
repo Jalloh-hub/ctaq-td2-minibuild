@@ -46,3 +46,26 @@ tasks.jacocoTestReport {
         csv.required.set(false)
     }
 }
+
+// Un niveau de test par tâche, sélectionné par les étiquettes JUnit (@Tag), chacun avec son
+// rapport de couverture : ./gradlew unitTest (resp. integrationTest, validationTest)
+listOf("unit", "integration", "validation").forEach { niveau ->
+    val tache = tasks.register<Test>("${niveau}Test") {
+        description = "Exécute les tests étiquetés @Tag(\"$niveau\")."
+        group = "verification"
+        testClassesDirs = sourceSets["test"].output.classesDirs
+        classpath = sourceSets["test"].runtimeClasspath
+        useJUnitPlatform { includeTags(niveau) }
+    }
+    val rapport = tasks.register<JacocoReport>("${niveau}TestReport") {
+        description = "Rapport de couverture des tests étiquetés @Tag(\"$niveau\")."
+        group = "verification"
+        executionData(tache.get())
+        sourceSets(sourceSets["main"])
+        reports {
+            html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/$niveau"))
+            csv.required.set(true)
+        }
+    }
+    tache { finalizedBy(rapport) }
+}

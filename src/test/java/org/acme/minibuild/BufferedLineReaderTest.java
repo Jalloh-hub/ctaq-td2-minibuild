@@ -5,8 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.IOException;
 import java.io.StringReader;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+@Tag("unit")
 class BufferedLineReaderTest {
 
     // Un StringReader est un vrai Reader (pas une doublure) : aucun fichier nécessaire.

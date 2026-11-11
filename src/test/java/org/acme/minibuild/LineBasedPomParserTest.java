@@ -10,10 +10,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+@Tag("unit")
 class LineBasedPomParserTest {
 
     private static final Gav LIB_A = Gav.parse("org.acme:lib-a:1.0.0");

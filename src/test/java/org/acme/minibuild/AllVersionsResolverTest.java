@@ -13,9 +13,11 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
+@Tag("unit")
 class AllVersionsResolverTest {
 
     private static final Gav LIB_A = Gav.parse("org.acme:lib-a:1.0.0");
