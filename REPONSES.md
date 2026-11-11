@@ -518,3 +518,37 @@ Les tests d'intégration et de validation ré-exécutent ensuite ce même code :
 - d'éventuelles **branches défensives** (vérifications de `null`, cas « impossibles ») qu'aucun test n'a exigées.
 
 Enfin, même 100 % ne prouverait pas l'absence de défauts : « un code exécuté n'est pas pour autant correctement vérifié » (cours Outils). La couverture mesure ce que les tests **exécutent**, pas ce qu'ils **vérifient**.
+
+## Question 38
+
+> Lancer la mesure et ouvrir le rapport HTML. Comparer la couverture obtenue avec votre prédiction. Identifier les portions non couvertes et compléter les tests si nécessaire.
+
+Mesure : `./gradlew test jacocoTestReport`, rapport HTML dans `build/reports/jacoco/test/html/index.html`.
+
+**Première mesure** (48 tests verts) :
+
+| Compteur | Couverture |
+|---|---|
+| Instructions (C0) | **98 %** (7 manquées sur 367) |
+| Branches (C1) | **100 %** (0 manquée sur 24) |
+| Lignes | 81 / 84 |
+| Méthodes | 27 / 29 |
+| Classes | 12 / 13 |
+
+**Comparaison avec la prédiction (question 37) : conforme.** Toutes les classes écrites en TDD sont à **100 %** en instructions et en branches. Les records `Artifact` et `Project` et les trois exceptions sont aussi à 100 %, **sans test dédié** : ils sont couverts par leur usage dans les autres tests. **La seule portion non couverte est `App`** (0 %, 7 instructions, 2 méthodes : le constructeur implicite et `main`), exactement comme prévu.
+
+**Que faire de `App` ?** C'est la classe `main` (« Hello World! ») engendrée par `gradle init` à la question 1, avec le plugin `application` qui la désigne comme point d'entrée. Elle ne fait **rien** de minibuild, aucune tâche de la task list ne la concerne, et aucun test ne l'a exigée. Écrire un test pour la couvrir serait **tester un code sans intérêt** dans le seul but de faire monter un chiffre. La bonne correction est de **la supprimer** (YAGNI, cours MAPC : du code qu'aucun besoin ne justifie) : suppression de `App.java` et remplacement du plugin `application` par le plugin `java` dans `build.gradle.kts` (le corrigé n'a pas non plus de classe `App`).
+
+**Seconde mesure**, après suppression (48 tests verts) :
+
+| Compteur | Couverture |
+|---|---|
+| Instructions (C0) | **100 %** (360 / 360) |
+| Branches (C1) | **100 %** (24 / 24) |
+| Lignes | 81 / 81 |
+| Méthodes | 27 / 27 |
+| Classes | 12 / 12 |
+
+On retrouve les chiffres du code de référence (360/360 instructions, 24/24 branches). **Aucun test n'a eu besoin d'être ajouté** : c'est la conséquence attendue du TDD.
+
+**Limite** : 100 % en C0 et C1 signifie que chaque instruction et chaque branche a été **exécutée** au moins une fois, pas qu'elle a été **vérifiée**. Un test sans assertion qui appellerait `build` couvrirait tout autant de code. Par exemple, `Artifact` et `Project` sont couverts sans qu'aucun test ne vérifie spécifiquement leur copie défensive. « 100 % de couverture ne garantit pas l'absence de défauts : un code exécuté n'est pas pour autant correctement vérifié » (cours Outils).

@@ -1,5 +1,5 @@
 plugins {
-    application
+    java
     jacoco
 }
 
@@ -27,10 +27,6 @@ dependencies {
 
     // Mockito 5.14.2 : doublures de test
     testImplementation("org.mockito:mockito-core:5.14.2")
-}
-
-application {
-    mainClass.set("org.acme.minibuild.App")
 }
 
 jacoco {
